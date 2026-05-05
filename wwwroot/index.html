@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📚 Tủ Sách Của Kim Hà</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary:   '#F9A8D4',
+                        secondary: '#BAE6FD',
+                        accent:    '#FED7AA',
+                        surface:   '#FFF1F9',
+                        muted:     '#F3E8FF',
+                        textMain:  '#4A4A6A',
+                    },
+                    fontFamily: { nunito: ['Nunito', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Nunito', sans-serif; background: #FFF1F9; color: #4A4A6A; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #FFF1F9; }
+        ::-webkit-scrollbar-thumb { background: #F9A8D4; border-radius: 3px; }
+        .book-card { transition: transform .2s, box-shadow .2s; }
+        .book-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(249,168,212,.35); }
+        .nav-item.active { background: #F9A8D4; color: white; }
+        [x-cloak] { display: none !important; }
+        .fade-in { animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body x-data="app()" x-init="init()" x-cloak>
+
+<div class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white shadow-lg flex flex-col p-6 gap-4 flex-shrink-0">
+        <div class="text-center mb-4">
+            <div class="text-4xl mb-2">📚</div>
+            <h1 class="text-xl font-extrabold text-pink-400">Tủ Sách</h1>
+            <p class="text-xs text-purple-300 font-semibold">Kim Hà</p>
+        </div>
+        <nav class="flex flex-col gap-2">
+            <button @click="currentPage='dashboard'" :class="currentPage==='dashboard' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+                🏠 <span>Tổng quan</span>
+            </button>
+            <button @click="currentPage='books'" :class="currentPage==='books' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+                📖 <span>Tất cả sách</span>
+            </button>
+            <button @click="currentPage='categories'" :class="currentPage==='categories' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+                🏷️ <span>Thể loại</span>
+            </button>
+            <button @click="currentPage='series'" :class="currentPage==='series' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+                📦 <span>Bộ sách</span>
+            </button>
+            <button @click="currentPage='import'" :class="currentPage==='import' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+                📥 <span>Import sách</span>
+            </button>
+        </nav>
+        <div class="mt-auto bg-pink-50 rounded-2xl p-4 text-center">
+            <p class="text-3xl font-extrabold text-pink-400" x-text="stats.totalBooks"></p>
+            <p class="text-xs text-purple-400 font-semibold">Tổng số sách</p>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-y-auto p-8">
+
+        <!-- DASHBOARD -->
+        <div x-show="currentPage==='dashboard'" class="fade-in">
+            <h2 class="text-3xl font-extrabold text-pink-400 mb-8">🌸 Xin chào Kim Hà!</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <div class="text-4xl mb-2">📚</div>
+                    <p class="text-3xl font-extrabold text-pink-400" x-text="stats.totalBooks"></p>
+                    <p class="text-sm text-gray-500">Tổng sách</p>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <div class="text-4xl mb-2">✅</div>
+                    <p class="text-3xl font-extrabold text-green-400" x-text="stats.completedBooks"></p>
+                    <p class="text-sm text-gray-500">Đã đọc</p>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <div class="text-4xl mb-2">📖</div>
+                    <p class="text-3xl font-extrabold text-blue-400" x-text="stats.readingBooks"></p>
+                    <p class="text-sm text-gray-500">Đang đọc</p>
+                </div>
+                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <div class="text-4xl mb-2">🌙</div>
+                    <p class="text-3xl font-extrabold text-purple-400" x-text="stats.notStartedBooks"></p>
+                    <p class="text-sm text-gray-500">Chưa đọc</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-6 shadow-sm">
+                <h3 class="text-lg font-extrabold text-gray-700 mb-4">📌 Thêm gần đây</h3>
+                <div class="space-y-3">
+                    <template x-for="book in recentBooks" :key="book.id">
+                        <div class="flex items-center justify-between p-3 bg-pink-50 rounded-xl">
+                            <div>
+                                <p class="font-bold text-gray-700" x-text="book.title"></p>
+                                <p class="text-xs text-gray-400" x-text="book.categoryName"></p>
+                            </div>
+                            <span :class="{
+                                'bg-green-100 text-green-600': book.readingStatus === 2,
+                                'bg-blue-100 text-blue-600':  book.readingStatus === 1,
+                                'bg-gray-100 text-gray-500':  book.readingStatus === 0
+                              }" class="text-xs px-3 py-1 rounded-full font-semibold" x-text="book.readingStatusText">
+                            </span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOOKS PAGE -->
+        <div x-show="currentPage==='books'" class="fade-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-extrabold text-pink-400">📖 Tất cả sách</h2>
+                <button @click="openBookModal()" class="bg-pink-400 text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors shadow-md">
+                    ➕ Thêm sách
+                </button>
+            </div>
+            <div class="bg-white rounded-2xl p-4 shadow-sm mb-6 flex flex-wrap gap-4">
+                <input x-model="bookSearch" @input.debounce.400ms="loadBooks()"
+                       placeholder="🔍 Tìm tên sách, tác giả..."
+                       class="flex-1 min-w-48 border-2 border-pink-200 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-400" />
+                <select x-model="bookCategoryFilter" @change="loadBooks()"
+                        class="border-2 border-blue-200 rounded-xl px-4 py-2 focus:outline-none focus:border-blue-400">
+                    <option value="">🏷️ Tất cả thể loại</option>
+                    <template x-for="cat in categories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
+                </select>
+                <select x-model="bookStatusFilter" @change="loadBooks()"
+                        class="border-2 border-orange-200 rounded-xl px-4 py-2 focus:outline-none focus:border-orange-400">
+                    <option value="">📚 Tất cả trạng thái</option>
+                    <option value="0">🌙 Chưa đọc</option>
+                    <option value="1">📖 Đang đọc</option>
+                    <option value="2">✅ Đã đọc</option>
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <template x-for="book in books" :key="book.id">
+                    <div class="book-card bg-white rounded-2xl p-5 shadow-sm cursor-pointer" @click="openBookModal(book)">
+                        <div class="w-full h-32 rounded-xl mb-4 flex items-center justify-center text-5xl"
+                             :style="getCoverStyle(book.categoryName)">📖</div>
+                        <h3 class="font-extrabold text-gray-700 mb-1 line-clamp-2" x-text="book.title"></h3>
+                        <p class="text-sm text-gray-400 mb-3" x-text="book.author || 'Chưa có tác giả'"></p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full font-semibold" x-text="book.categoryName"></span>
+                            <span :class="{
+                                'bg-green-100 text-green-600': book.readingStatus === 2,
+                                'bg-blue-100 text-blue-600':  book.readingStatus === 1,
+                                'bg-gray-100 text-gray-500':  book.readingStatus === 0
+                              }" class="text-xs px-3 py-1 rounded-full font-semibold" x-text="book.readingStatusText">
+                            </span>
+                        </div>
+                        <template x-if="book.seriesName">
+                            <p class="text-xs text-purple-400 mt-2 font-semibold">
+                                📦 <span x-text="book.seriesName"></span>
+                                <span x-show="book.volumeNumber"> - Tập <span x-text="book.volumeNumber"></span></span>
+                            </p>
+                        </template>
+                        <template x-if="book.rating">
+                            <div class="flex gap-1 mt-2">
+                                <template x-for="i in 5" :key="i">
+                                    <span :class="i <= book.rating ? 'text-yellow-400' : 'text-gray-200'">★</span>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+            <div x-show="books.length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">📭</div>
+                <p class="text-gray-400 font-semibold">Không tìm thấy sách nào</p>
+            </div>
+        </div>
+
+        <!-- CATEGORIES PAGE -->
+        <div x-show="currentPage==='categories'" class="fade-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-extrabold text-pink-400">🏷️ Thể loại</h2>
+                <button @click="openCategoryModal()" class="bg-blue-400 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors shadow-md">
+                    ➕ Thêm thể loại
+                </button>
+            </div>
+            <div class="mb-4">
+                <input x-model="categorySearch" @input.debounce.400ms="loadCategories()"
+                       placeholder="🔍 Tìm thể loại..."
+                       class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <template x-for="cat in categories" :key="cat.id">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="font-extrabold text-gray-700 text-lg" x-text="cat.name"></h3>
+                            <div class="flex gap-2">
+                                <button @click="openCategoryModal(cat)" class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
+                                <button @click="deleteCategory(cat.id)" class="text-red-400 hover:text-red-600 p-1">🗑️</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-4" x-text="cat.description || 'Chưa có mô tả'"></p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-extrabold text-blue-400" x-text="cat.bookCount"></span>
+                            <span class="text-xs text-gray-400">cuốn sách</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- ════ SERIES PAGE ════ -->
+        <!-- ✅ FIX: Bọc đúng trong div với x-show, x-for nằm bên trong -->
+        <div x-show="currentPage==='series'" class="fade-in">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-extrabold text-pink-400">📦 Bộ sách</h2>
+                <button @click="openSeriesModal()" class="bg-orange-400 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-500 transition-colors shadow-md">
+                    ➕ Thêm bộ sách
+                </button>
+            </div>
+            <div class="mb-6">
+                <input x-model="seriesSearch" @input.debounce.400ms="loadSeries()"
+                       placeholder="🔍 Tìm bộ sách..."
+                       class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400" />
+            </div>
+
+            <!-- Series Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <template x-for="s in seriesList" :key="s.id">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+
+                        <!-- Header -->
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-extrabold text-gray-700 text-lg" x-text="s.name"></h3>
+                            <div class="flex gap-2">
+                                <button @click="openSeriesModal(s)" class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
+                                <button @click="deleteSeries(s.id)" class="text-red-400 hover:text-red-600 p-1">🗑️</button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-4" x-text="s.author || 'Chưa có tác giả'"></p>
+
+                        <!-- Volume preview (10 tập đầu) -->
+                        <div class="flex flex-wrap gap-2 mb-4" x-show="s.totalVolumes">
+                            <template x-for="i in Math.min(s.totalVolumes, 10)" :key="i">
+                                <span class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border-b-2"
+                                      :class="s.ownedVolumes && s.ownedVolumes.includes(i)
+                                          ? 'text-gray-600 border-gray-400'
+                                          : 'text-red-500 border-red-400'">
+                                    <span x-text="String(i).padStart(2,'0')"></span>
+                                </span>
+                            </template>
+                            <span x-show="s.totalVolumes > 10"
+                                  class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm font-bold">...</span>
+                        </div>
+
+                        <!-- Notes preview -->
+                        <template x-if="s.notes">
+                            <p class="text-xs text-purple-400 italic mb-3 line-clamp-2">
+                                📝 <span x-text="s.notes"></span>
+                            </p>
+                        </template>
+
+                        <!-- Progress + nút xem -->
+                        <div class="flex justify-between items-center gap-3">
+                            <div class="flex-1">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="font-semibold text-gray-500">Tiến độ</span>
+                                    <span class="font-bold text-orange-400"
+                                          x-text="`${s.currentVolumes}/${s.totalVolumes || '?'} tập`"></span>
+                                </div>
+                                <div class="w-full bg-orange-100 rounded-full h-2" x-show="s.totalVolumes">
+                                    <div class="bg-orange-400 h-2 rounded-full transition-all"
+                                         :style="`width:${Math.min(100,(s.currentVolumes/(s.totalVolumes||1))*100)}%`"></div>
+                                </div>
+                            </div>
+                            <button @click="openVolumeMap(s)"
+                                    class="bg-orange-100 text-orange-500 px-3 py-2 rounded-xl text-xs font-bold hover:bg-orange-200 transition-colors whitespace-nowrap">
+                                Xem mục lục
+                            </button>
+                        </div>
+
+                        <!-- Missing volumes -->
+                        <template x-if="s.missingVolumes && s.missingVolumes.length > 0">
+                            <p class="text-xs text-red-400 font-semibold mt-3">
+                                ⚠️ Thiếu: <span x-text="s.missingVolumes.join(', ')"></span>
+                            </p>
+                        </template>
+
+                    </div>
+                </template>
+            </div>
+
+            <!-- Empty state -->
+            <div x-show="seriesList.length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">📦</div>
+                <p class="text-gray-400 font-semibold">Chưa có bộ sách nào</p>
+            </div>
+        </div>
+
+        <!-- IMPORT PAGE -->
+        <div x-show="currentPage==='import'" class="fade-in">
+            <h2 class="text-3xl font-extrabold text-pink-400 mb-8">📥 Import sách từ Excel</h2>
+            <div class="bg-white rounded-2xl p-8 shadow-sm max-w-xl">
+                <div x-show="!importResult">
+                    <div class="border-4 border-dashed border-pink-200 rounded-2xl p-12 text-center mb-6"
+                         @dragover.prevent @drop.prevent="handleFileDrop($event)">
+                        <div class="text-6xl mb-4">📂</div>
+                        <p class="font-bold text-gray-600 mb-2">Kéo thả file Excel vào đây</p>
+                        <p class="text-gray-400 text-sm mb-6">hoặc</p>
+                        <label class="cursor-pointer bg-pink-400 text-white px-8 py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors">
+                            Chọn file .xlsx
+                            <input type="file" accept=".xlsx" class="hidden" @change="handleFileSelect($event)" />
+                        </label>
+                    </div>
+                    <div x-show="importing" class="text-center text-pink-500 font-bold">
+                        ⏳ Đang import... vui lòng chờ
+                    </div>
+                </div>
+                <div x-show="importResult" class="fade-in">
+                    <div class="text-center mb-6">
+                        <div class="text-5xl mb-3">🎉</div>
+                        <h3 class="text-xl font-extrabold text-gray-700">Import hoàn thành!</h3>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-green-50 p-4 rounded-xl text-center">
+                            <p class="text-3xl font-extrabold text-green-500" x-text="importResult?.successCount"></p>
+                            <p class="text-sm text-gray-500">Thêm thành công</p>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-xl text-center">
+                            <p class="text-3xl font-extrabold text-orange-400" x-text="importResult?.skippedCount"></p>
+                            <p class="text-sm text-gray-500">Bỏ qua</p>
+                        </div>
+                    </div>
+                    <template x-if="importResult?.errors?.length > 0">
+                        <div class="bg-red-50 p-4 rounded-xl mb-4">
+                            <p class="font-bold text-red-500 mb-2">❌ Lỗi:</p>
+                            <template x-for="err in importResult.errors" :key="err">
+                                <p class="text-sm text-red-400" x-text="err"></p>
+                            </template>
+                        </div>
+                    </template>
+                    <button @click="importResult = null"
+                            class="w-full bg-pink-400 text-white py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors">
+                        Import thêm
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- BOOK MODAL -->
+<div x-show="showBookModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showBookModal=false">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+        <h3 class="text-2xl font-extrabold text-pink-400 mb-6" x-text="editingBook?.id ? '✏️ Sửa sách' : '➕ Thêm sách mới'"></h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Tên sách *</label>
+                <input x-model="editingBook.title" placeholder="Nhập tên sách..."
+                       class="w-full border-2 border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-400" />
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Tác giả</label>
+                <input x-model="editingBook.author" placeholder="Nhập tên tác giả..."
+                       class="w-full border-2 border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-400" />
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Thể loại *</label>
+                <select x-model="editingBook.categoryId"
+                        class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400">
+                    <option value="">Chọn thể loại</option>
+                    <template x-for="cat in categories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
+                </select>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Bộ sách</label>
+                    <select x-model="editingBook.seriesId"
+                            class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400">
+                        <option value="">Không thuộc bộ nào</option>
+                        <template x-for="s in seriesList" :key="s.id">
+                            <option :value="s.id" x-text="s.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Tập số</label>
+                    <input x-model="editingBook.volumeNumber" type="number" placeholder="1"
+                           class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Trạng thái đọc</label>
+                <select x-model="editingBook.readingStatus"
+                        class="w-full border-2 border-purple-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-400">
+                    <option value="0">🌙 Chưa đọc</option>
+                    <option value="1">📖 Đang đọc</option>
+                    <option value="2">✅ Đã đọc</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Đánh giá (1-5 ⭐)</label>
+                <input x-model="editingBook.rating" type="number" min="1" max="5" placeholder="5"
+                       class="w-full border-2 border-yellow-200 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400" />
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-600 mb-1">Ghi chú</label>
+                <textarea x-model="editingBook.notes" rows="3" placeholder="Ghi chú..."
+                          class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gray-400"></textarea>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button @click="saveBook()" class="flex-1 bg-pink-400 text-white py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors">💾 Lưu</button>
+            <button @click="showBookModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Huỷ</button>
+            <button x-show="editingBook?.id" @click="deleteBook(editingBook.id)"
+                    class="bg-red-100 text-red-500 px-4 py-3 rounded-xl font-bold hover:bg-red-200 transition-colors">🗑️</button>
+        </div>
+    </div>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div x-show="showCategoryModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showCategoryModal=false">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop>
+        <h3 class="text-2xl font-extrabold text-blue-400 mb-6" x-text="editingCategory?.id ? '✏️ Sửa thể loại' : '➕ Thêm thể loại'"></h3>
+        <div class="space-y-4">
+            <input x-model="editingCategory.name" placeholder="Tên thể loại *"
+                   class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400" />
+            <textarea x-model="editingCategory.description" rows="3" placeholder="Mô tả..."
+                      class="w-full border-2 border-blue-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-300"></textarea>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button @click="saveCategory()" class="flex-1 bg-blue-400 text-white py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors">💾 Lưu</button>
+            <button @click="showCategoryModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">Huỷ</button>
+        </div>
+    </div>
+</div>
+
+<!-- SERIES MODAL -->
+<div x-show="showSeriesModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showSeriesModal=false">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop>
+        <h3 class="text-2xl font-extrabold text-orange-400 mb-6" x-text="editingSeries?.id ? '✏️ Sửa bộ sách' : '➕ Thêm bộ sách'"></h3>
+        <div class="space-y-4">
+            <input x-model="editingSeries.name" placeholder="Tên bộ sách *"
+                   class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400" />
+            <input x-model="editingSeries.author" placeholder="Tác giả"
+                   class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
+            <input x-model="editingSeries.totalVolumes" type="number" placeholder="Tổng số tập"
+                   class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
+            <textarea x-model="editingSeries.notes" rows="2" placeholder="Ghi chú bộ sách..."
+                      class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300"></textarea>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button @click="saveSeries()" class="flex-1 bg-orange-400 text-white py-3 rounded-xl font-bold hover:bg-orange-500 transition-colors">💾 Lưu</button>
+            <button @click="showSeriesModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">Huỷ</button>
+        </div>
+    </div>
+</div>
+
+<!-- VOLUME MAP MODAL -->
+<div x-show="showVolumeMap" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showVolumeMap=false">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+        <template x-if="selectedSeries">
+            <div>
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h3 class="text-2xl font-extrabold text-orange-400" x-text="selectedSeries.name"></h3>
+                        <p class="text-sm text-gray-400" x-text="selectedSeries.author"></p>
+                    </div>
+                    <button @click="showVolumeMap=false" class="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+                </div>
+
+                <!-- Stats -->
+                <div class="flex gap-4 mb-6 text-sm">
+                    <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold"
+                          x-text="`📦 ${selectedSeries.currentVolumes}/${selectedSeries.totalVolumes || '?'} tập`"></span>
+                    <span x-show="selectedSeries.missingVolumes && selectedSeries.missingVolumes.length > 0"
+                          class="bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold"
+                          x-text="`⚠️ Thiếu ${selectedSeries.missingVolumes?.length} tập`"></span>
+                </div>
+
+                <!-- Volume Grid -->
+                <div class="grid grid-cols-10 gap-3 mb-6 bg-gray-50 rounded-2xl p-6">
+                    <template x-for="i in (selectedSeries.totalVolumes || 0)" :key="i">
+                        <div class="flex items-center justify-center">
+                            <span class="text-sm font-bold"
+                                  style="text-decoration: underline; text-underline-offset: 3px;"
+                                  :style="selectedSeries.ownedVolumes && selectedSeries.ownedVolumes.includes(i)
+                                      ? 'color: #4b5563'
+                                      : 'color: #ef4444'"
+                                  x-text="String(i).padStart(2,'0')">
+                            </span>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex gap-6 text-sm mb-6">
+                    <span class="flex items-center gap-2">
+                        <span class="font-bold text-gray-600" style="text-decoration:underline">01</span>
+                        <span class="text-gray-500">Đã có</span>
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <span class="font-bold text-red-500" style="text-decoration:underline">01</span>
+                        <span class="text-gray-500">Đang thiếu</span>
+                    </span>
+                </div>
+
+                <!-- Notes -->
+                <div class="border-t pt-5">
+                    <label class="block text-sm font-bold text-gray-600 mb-2">📝 Ghi chú bộ sách</label>
+                    <textarea x-model="selectedSeries.notes" rows="3"
+                              placeholder="VD: Đang chờ tái bản tập 5, mua ở Fahasa..."
+                              class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 text-sm"></textarea>
+                    <button @click="saveSeriesNotes()"
+                            class="mt-3 bg-orange-400 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-500 transition-colors text-sm">
+                        💾 Lưu ghi chú
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
