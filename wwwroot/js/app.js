@@ -192,6 +192,75 @@ function app() {
         'Truyện tranh':       'background: linear-gradient(135deg,#fdf4ff,#f5d0fe)',
       };
       return map[categoryName] || 'background: linear-gradient(135deg,#f3f4f6,#e5e7eb)';
+    },
+    // ── Series Modal Helpers ─────────────────────
+openSeriesModal(s = null) {
+    this.editingSeries = s 
+        ? { ...s, ownedVolumeNumbers: [] } 
+        : { 
+            totalVolumes: 1, 
+            notes: '', 
+            isOngoing: false,
+            ownedVolumeNumbers: [1],  // Default: tập 1 đã có
+            categoryId: ''
+          };
+    this.showSeriesModal = true;
+},
+
+toggleOwnedVolume(volumeNumber) {
+    if (!this.editingSeries.ownedVolumeNumbers) 
+        this.editingSeries.ownedVolumeNumbers = [];
+    
+    const idx = this.editingSeries.ownedVolumeNumbers.indexOf(volumeNumber);
+    if (idx >= 0) {
+        this.editingSeries.ownedVolumeNumbers.splice(idx, 1);
+    } else {
+        this.editingSeries.ownedVolumeNumbers.push(volumeNumber);
     }
-  };
+},
+
+selectAllVolumes() {
+    const total = this.editingSeries.totalVolumes || 1;
+    this.editingSeries.ownedVolumeNumbers = Array.from({length: total}, (_, i) => i + 1);
+},
+
+clearAllVolumes() {
+    this.editingSeries.ownedVolumeNumbers = [];
+},
+
+updateOwnedVolumesArray() {
+    // Khi thay totalVolumes, loại bỏ những tập vượt quá
+    if (!this.editingSeries.ownedVolumeNumbers) return;
+    const total = this.editingSeries.totalVolumes || 0;
+    this.editingSeries.ownedVolumeNumbers = 
+        this.editingSeries.ownedVolumeNumbers.filter(v => v <= total);
+},
+
+    // ── Volume Map - Toggle ─────────────────────
+    async toggleVolumeInSeries(volumeNumber) {
+        await fetch(`${API}/series/${this.selectedSeries.id}/toggle-volume`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ volumeNumber, edition: 0 })
+        });
+        await this.loadSeries();
+        await this.loadBooks();
+        this.selectedSeries = this.seriesList.find(s => s.id === this.selectedSeries.id);
+    },
+
+    async addNewVolume() {
+        // Tăng totalVolumes lên 1
+        const updated = { 
+            ...this.selectedSeries, 
+            totalVolumes: this.selectedSeries.totalVolumes + 1 
+        };
+        await fetch(`${API}/series/${this.selectedSeries.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
+        await this.loadSeries();
+        this.selectedSeries = this.seriesList.find(s => s.id === this.selectedSeries.id);
+    }
+  };  
 }

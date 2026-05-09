@@ -9,5 +9,6 @@ namespace LibraryManagement.Services.Interfaces
         Task<SeriesDto> CreateSeriesAsync(CreateSeriesDto dto);
         Task UpdateSeriesAsync(int id, UpdateSeriesDto dto);
         Task DeleteSeriesAsync(int id);
+        Task ToggleVolumeAsync(int seriesId, ToggleVolumeDto dto);
     }
 }

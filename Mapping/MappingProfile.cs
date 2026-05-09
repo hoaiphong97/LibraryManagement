@@ -19,19 +19,20 @@ namespace LibraryManagement.Mapping
 
             // Series mappings
             CreateMap<Series, SeriesDto>()
-                .ForMember(dest => dest.CurrentVolumes, opt => opt.MapFrom(src =>
-                    src.Books.Count(b => b.VolumeNumber.HasValue)))
-                .ForMember(dest => dest.OwnedVolumes, opt => opt.MapFrom(src =>   // ← THÊM
-                    src.Books
-                        .Where(b => b.VolumeNumber.HasValue)
-                        .Select(b => b.VolumeNumber!.Value)
-                        .OrderBy(v => v)
-                        .ToList()))
-                .ForMember(dest => dest.MissingVolumes, opt => opt.MapFrom(src =>
-                    GetMissingVolumes(src)));
+                .ForMember(d => d.OwnedVolumes, opt => opt.MapFrom(s =>
+                    s.Books.Where(b => b.VolumeNumber > 0)
+                           .Select(b => b.VolumeNumber)
+                           .Distinct()
+                           .OrderBy(v => v)
+                           .ToList()))
+                .ForMember(d => d.MissingVolumes, opt => opt.MapFrom(s => GetMissingVolumes(s)))
+                .ForMember(d => d.CurrentVolumes, opt => opt.MapFrom(s =>
+                    s.Books.Select(b => b.VolumeNumber).Distinct().Count()))
+                .ForMember(d => d.Volumes, opt => opt.MapFrom(s => BuildVolumeInfos(s)));
 
             CreateMap<CreateSeriesDto, Series>();
             CreateMap<UpdateSeriesDto, Series>();
+
             // Book mappings
             CreateMap<Book, BookDto>()
                 .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
@@ -46,8 +47,8 @@ namespace LibraryManagement.Mapping
         private static List<int> GetMissingVolumes(Series series)
         {
             var existingVolumes = series.Books
-                .Where(b => b.VolumeNumber.HasValue)
-                .Select(b => b.VolumeNumber!.Value)
+                .Where(b => b.VolumeNumber > 0)
+                .Select(b => b.VolumeNumber)
                 .OrderBy(v => v)
                 .ToList();
 
@@ -87,5 +88,37 @@ namespace LibraryManagement.Mapping
                 _ => "Không xác định"
             };
         }
+
+        private static List<VolumeInfoDto> BuildVolumeInfos(Series series)
+        {
+            var volumes = new List<VolumeInfoDto>();
+            for (int i = 1; i <= series.TotalVolumes; i++)
+            {
+                var booksOfVolume = series.Books.Where(b => b.VolumeNumber == i).ToList();
+                volumes.Add(new VolumeInfoDto
+                {
+                    VolumeNumber = i,
+                    IsOwned = booksOfVolume.Any(),
+                    Editions = booksOfVolume.Select(b => new BookEditionDto
+                    {
+                        BookId = b.Id,
+                        Edition = b.Edition,
+                        EditionText = GetEditionText(b.Edition),
+                        ReadingStatus = b.ReadingStatus
+                    }).ToList()
+                });
+            }
+            return volumes;
+        }
+
+        private static string GetEditionText(BookEdition edition) => edition switch
+        {
+            BookEdition.Standard => "Bản thường",
+            BookEdition.Special => "Bản đặc biệt",
+            BookEdition.Limited => "Bản giới hạn",
+            BookEdition.Collector => "Bản sưu tầm",
+            _ => "Khác"
+        };
+
     }
 }

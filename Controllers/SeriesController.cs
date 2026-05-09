@@ -49,5 +49,12 @@ namespace LibraryManagement.Controllers
             await _seriesService.DeleteSeriesAsync(id);
             return NoContent();
         }
+
+        [HttpPost("{id}/toggle-volume")]
+        public async Task<IActionResult> ToggleVolume(int id, ToggleVolumeDto dto)
+        {
+            await _seriesService.ToggleVolumeAsync(id, dto);
+            return NoContent();
+        }
     }
 }

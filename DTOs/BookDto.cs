@@ -16,6 +16,8 @@ namespace LibraryManagement.DTOs
         public int? SeriesId { get; set; }
         public string? SeriesName { get; set; }
         public int? VolumeNumber { get; set; }
+        public BookEdition Edition { get; set; }       // ✅ THÊM
+        public string EditionText { get; set; } = string.Empty;  // ✅ THÊM
         public ReadingStatus ReadingStatus { get; set; }
         public string ReadingStatusText { get; set; } = string.Empty;
         public int? Rating { get; set; }
@@ -36,6 +38,7 @@ namespace LibraryManagement.DTOs
         public int CategoryId { get; set; }
         public int? SeriesId { get; set; }
         public int? VolumeNumber { get; set; }
+        public BookEdition Edition { get; set; } = BookEdition.Standard;
         public ReadingStatus ReadingStatus { get; set; }
         public int? Rating { get; set; }
         public string? Notes { get; set; }
