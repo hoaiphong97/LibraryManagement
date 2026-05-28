@@ -40,8 +40,29 @@ function app() {
         this.loadDashboard();
     },
 
+    // ── Computed (client-side filtering) ───────
+    get filteredSeriesList() {
+        if (!this.seriesSearch?.trim()) return this.seriesList;
+        const q = this.seriesSearch.trim().toLowerCase();
+        return this.seriesList.filter(s =>
+            s.name?.toLowerCase().includes(q) ||
+            s.author?.toLowerCase().includes(q) ||
+            s.categoryName?.toLowerCase().includes(q)
+        );
+    },
+
+    get filteredCategories() {
+        if (!this.categorySearch?.trim()) return this.categories;
+        const q = this.categorySearch.trim().toLowerCase();
+        return this.categories.filter(c =>
+            c.name?.toLowerCase().includes(q) ||
+            c.description?.toLowerCase().includes(q)
+        );
+    },
+
     // ── Dashboard ──────────────────────────────
     loadDashboard() {
+        // Luôn dùng seriesList gốc (không bị ảnh hưởng bởi search)
         this.stats.totalSeries     = this.seriesList.length;
         this.stats.totalVolumes    = this.seriesList.reduce((sum, s) => sum + (s.currentVolumes || 0), 0);
         this.stats.missingSeries   = this.seriesList.filter(s => s.missingVolumes && s.missingVolumes.length > 0).length;
@@ -52,9 +73,8 @@ function app() {
     // ── Categories ─────────────────────────────
     async loadCategories() {
         try {
-            const params = new URLSearchParams();
-            if (this.categorySearch) params.set('search', this.categorySearch);
-            this.categories = await apiFetch(`${API}/categories?${params}`) || [];
+            // Luôn load toàn bộ, filter trên client
+            this.categories = await apiFetch(`${API}/categories`) || [];
         } catch (e) {
             alert('Lỗi tải thể loại: ' + e.message);
             this.categories = [];
@@ -103,9 +123,8 @@ function app() {
     // ── Series ─────────────────────────────────
     async loadSeries() {
         try {
-            const params = new URLSearchParams();
-            if (this.seriesSearch) params.set('search', this.seriesSearch);
-            this.seriesList = await apiFetch(`${API}/series?${params}`) || [];
+            // Luôn load toàn bộ, filter trên client
+            this.seriesList = await apiFetch(`${API}/series`) || [];
         } catch (e) {
             alert('Lỗi tải bộ sách: ' + e.message);
             this.seriesList = [];

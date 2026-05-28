@@ -53,11 +53,11 @@
                     class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
                 🏠 <span>Tổng quan</span>
             </button>
-            <button @click="currentPage='series'; loadSeries()" :class="currentPage==='series' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+            <button @click="currentPage='series'" :class="currentPage==='series' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
                     class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
                 📦 <span>Bộ sách</span>
             </button>
-            <button @click="currentPage='categories'; loadCategories()" :class="currentPage==='categories' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
+            <button @click="currentPage='categories'" :class="currentPage==='categories' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
                     class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
                 🏷️ <span>Thể loại</span>
             </button>
@@ -136,13 +136,13 @@
                 </button>
             </div>
             <div class="mb-6">
-                <input x-model="seriesSearch" @input.debounce.400ms="loadSeries()"
-                       placeholder="🔍 Tìm bộ sách..."
+                <input x-model="seriesSearch"
+                       placeholder="🔍 Tìm tên bộ sách, tác giả, thể loại..."
                        class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                <template x-for="s in seriesList" :key="s.id">
+                <template x-for="s in filteredSeriesList" :key="s.id">
                     <div class="bg-white rounded-2xl p-6 shadow-sm">
                         <div class="flex justify-between items-start mb-1">
                             <h3 class="font-extrabold text-gray-700 text-lg" x-text="s.name"></h3>
@@ -211,6 +211,10 @@
                 <div class="text-6xl mb-4">📦</div>
                 <p class="text-gray-400 font-semibold">Chưa có bộ sách nào</p>
             </div>
+            <div x-show="seriesList.length > 0 && filteredSeriesList.length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">🔍</div>
+                <p class="text-gray-400 font-semibold">Không tìm thấy bộ sách nào khớp với "<span x-text="seriesSearch"></span>"</p>
+            </div>
         </div>
 
         <!-- CATEGORIES PAGE -->
@@ -222,12 +226,16 @@
                 </button>
             </div>
             <div class="mb-4">
-                <input x-model="categorySearch" @input.debounce.400ms="loadCategories()"
+                <input x-model="categorySearch"
                        placeholder="🔍 Tìm thể loại..."
                        class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400" />
             </div>
+            <div x-show="categories.length > 0 && filteredCategories.length === 0" class="text-center py-10">
+                <div class="text-5xl mb-3">🔍</div>
+                <p class="text-gray-400 font-semibold">Không tìm thấy thể loại nào khớp với "<span x-text="categorySearch"></span>"</p>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                <template x-for="cat in categories" :key="cat.id">
+                <template x-for="cat in filteredCategories" :key="cat.id">
                     <div class="bg-white rounded-2xl p-6 shadow-sm">
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="font-extrabold text-gray-700 text-lg" x-text="cat.name"></h3>
