@@ -1,6 +1,5 @@
 const API = '/api';
 
-// Wrapper fetch với error handling chuẩn
 async function apiFetch(url, options = {}) {
     const res = await fetch(url, options);
     if (res.status === 204) return null;
@@ -34,10 +33,24 @@ function app() {
     selectedSeries: null,
     showVolumeMap: false,
 
+    toasts: [],
+    _toastId: 0,
+
     // ── Init ───────────────────────────────────
     async init() {
         await Promise.all([this.loadCategories(), this.loadSeries()]);
         this.loadDashboard();
+    },
+
+    // ── Toast ──────────────────────────────────
+    showToast(message, type = 'success', duration = 3500) {
+        const id = ++this._toastId;
+        this.toasts.push({ id, message, type });
+        setTimeout(() => this.removeToast(id), duration);
+    },
+
+    removeToast(id) {
+        this.toasts = this.toasts.filter(t => t.id !== id);
     },
 
     // ── Computed (client-side filtering) ───────
@@ -62,7 +75,6 @@ function app() {
 
     // ── Dashboard ──────────────────────────────
     loadDashboard() {
-        // Luôn dùng seriesList gốc (không bị ảnh hưởng bởi search)
         this.stats.totalSeries     = this.seriesList.length;
         this.stats.totalVolumes    = this.seriesList.reduce((sum, s) => sum + (s.currentVolumes || 0), 0);
         this.stats.missingSeries   = this.seriesList.filter(s => s.missingVolumes && s.missingVolumes.length > 0).length;
@@ -73,10 +85,9 @@ function app() {
     // ── Categories ─────────────────────────────
     async loadCategories() {
         try {
-            // Luôn load toàn bộ, filter trên client
             this.categories = await apiFetch(`${API}/categories`) || [];
         } catch (e) {
-            alert('Lỗi tải thể loại: ' + e.message);
+            this.showToast('Lỗi tải thể loại: ' + e.message, 'error');
             this.categories = [];
         }
     },
@@ -88,7 +99,7 @@ function app() {
 
     async saveCategory() {
         if (!this.editingCategory.name?.trim()) {
-            alert('Vui lòng nhập tên thể loại');
+            this.showToast('Vui lòng nhập tên thể loại', 'warning');
             return;
         }
         try {
@@ -104,8 +115,9 @@ function app() {
             this.showCategoryModal = false;
             await this.loadCategories();
             this.loadDashboard();
+            this.showToast(this.editingCategory.id ? 'Đã cập nhật thể loại!' : 'Đã thêm thể loại mới!');
         } catch (e) {
-            alert('Lỗi lưu thể loại: ' + e.message);
+            this.showToast('Lỗi lưu thể loại: ' + e.message, 'error');
         }
     },
 
@@ -115,18 +127,18 @@ function app() {
             await apiFetch(`${API}/categories/${id}`, { method: 'DELETE' });
             await this.loadCategories();
             this.loadDashboard();
+            this.showToast('Đã xoá thể loại.');
         } catch (e) {
-            alert('Không thể xóa: ' + e.message);
+            this.showToast('Không thể xóa: ' + e.message, 'error');
         }
     },
 
     // ── Series ─────────────────────────────────
     async loadSeries() {
         try {
-            // Luôn load toàn bộ, filter trên client
             this.seriesList = await apiFetch(`${API}/series`) || [];
         } catch (e) {
-            alert('Lỗi tải bộ sách: ' + e.message);
+            this.showToast('Lỗi tải bộ sách: ' + e.message, 'error');
             this.seriesList = [];
         }
     },
@@ -151,12 +163,13 @@ function app() {
 
     async saveSeries() {
         if (!this.editingSeries.name?.trim()) {
-            alert('Vui lòng nhập tên bộ sách');
+            this.showToast('Vui lòng nhập tên bộ sách', 'warning');
             return;
         }
         try {
-            const method = this.editingSeries.id ? 'PUT' : 'POST';
-            const url = this.editingSeries.id
+            const isEdit = !!this.editingSeries.id;
+            const method = isEdit ? 'PUT' : 'POST';
+            const url = isEdit
                 ? `${API}/series/${this.editingSeries.id}`
                 : `${API}/series`;
             await apiFetch(url, {
@@ -167,8 +180,9 @@ function app() {
             this.showSeriesModal = false;
             await this.loadSeries();
             this.loadDashboard();
+            this.showToast(isEdit ? 'Đã cập nhật bộ sách!' : 'Đã thêm bộ sách mới!');
         } catch (e) {
-            alert('Lỗi lưu bộ sách: ' + e.message);
+            this.showToast('Lỗi lưu bộ sách: ' + e.message, 'error');
         }
     },
 
@@ -181,9 +195,9 @@ function app() {
             });
             await this.loadSeries();
             this.selectedSeries = this.seriesList.find(s => s.id === this.selectedSeries.id) || this.selectedSeries;
-            alert('✅ Đã lưu ghi chú!');
+            this.showToast('Đã lưu ghi chú!');
         } catch (e) {
-            alert('Lỗi lưu ghi chú: ' + e.message);
+            this.showToast('Lỗi lưu ghi chú: ' + e.message, 'error');
         }
     },
 
@@ -193,8 +207,9 @@ function app() {
             await apiFetch(`${API}/series/${id}`, { method: 'DELETE' });
             await this.loadSeries();
             this.loadDashboard();
+            this.showToast('Đã xoá bộ sách.');
         } catch (e) {
-            alert('Lỗi xóa bộ sách: ' + e.message);
+            this.showToast('Lỗi xóa bộ sách: ' + e.message, 'error');
         }
     },
 
@@ -211,7 +226,7 @@ function app() {
 
     async uploadFile(file) {
         if (!file.name.endsWith('.xlsx')) {
-            alert('Vui lòng chọn file .xlsx');
+            this.showToast('Vui lòng chọn file .xlsx', 'warning');
             return;
         }
         this.importing = true;
@@ -229,7 +244,7 @@ function app() {
             await this.loadSeries();
             this.loadDashboard();
         } catch (e) {
-            alert('Import thất bại: ' + e.message);
+            this.showToast('Import thất bại: ' + e.message, 'error');
         } finally {
             this.importing = false;
         }
@@ -275,7 +290,7 @@ function app() {
             this.loadDashboard();
             this.selectedSeries = this.seriesList.find(s => s.id === this.selectedSeries.id) || this.selectedSeries;
         } catch (e) {
-            alert('Lỗi cập nhật tập: ' + e.message);
+            this.showToast('Lỗi cập nhật tập: ' + e.message, 'error');
         }
     },
 
@@ -292,8 +307,9 @@ function app() {
             });
             await this.loadSeries();
             this.selectedSeries = this.seriesList.find(s => s.id === this.selectedSeries.id) || this.selectedSeries;
+            this.showToast('Đã thêm tập mới!');
         } catch (e) {
-            alert('Lỗi thêm tập mới: ' + e.message);
+            this.showToast('Lỗi thêm tập mới: ' + e.message, 'error');
         }
     },
 
@@ -309,6 +325,21 @@ function app() {
             'Truyện tranh':       'background: linear-gradient(135deg,#fdf4ff,#f5d0fe)',
         };
         return map[categoryName] || 'background: linear-gradient(135deg,#f3f4f6,#e5e7eb)';
+    },
+
+    toastClass(type) {
+        const map = {
+            success: 'bg-green-50 border-green-300 text-green-700',
+            error:   'bg-red-50 border-red-300 text-red-600',
+            warning: 'bg-orange-50 border-orange-300 text-orange-600',
+            info:    'bg-blue-50 border-blue-300 text-blue-600',
+        };
+        return map[type] || map.info;
+    },
+
+    toastIcon(type) {
+        const map = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+        return map[type] || map.info;
     }
   };
 }
