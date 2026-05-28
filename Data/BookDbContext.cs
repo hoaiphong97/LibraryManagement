@@ -14,6 +14,7 @@ namespace LibraryManagement.Data
         public DbSet<Book> Books { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Series> Series { get; set; }
+        public DbSet<PreOrder> PreOrders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,6 +32,20 @@ namespace LibraryManagement.Data
                 .HasOne(s => s.Category)
                 .WithMany()
                 .HasForeignKey(s => s.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // PreOrder → Series (optional)
+            modelBuilder.Entity<PreOrder>()
+                .HasOne(p => p.Series)
+                .WithMany()
+                .HasForeignKey(p => p.SeriesId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // PreOrder → Book (optional, sau khi lên kệ)
+            modelBuilder.Entity<PreOrder>()
+                .HasOne(p => p.Book)
+                .WithMany()
+                .HasForeignKey(p => p.BookId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Seed data cho Categories (phân cấp)

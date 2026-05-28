@@ -45,7 +45,23 @@ namespace LibraryManagement.Mapping
 
             CreateMap<CreateBookDto, Book>();
             CreateMap<UpdateBookDto, Book>();
+
+            // PreOrder mappings
+            CreateMap<PreOrder, PreOrderDto>()
+                .ForMember(d => d.SeriesName, opt => opt.MapFrom(s => s.Series != null ? s.Series.Name : null))
+                .ForMember(d => d.StatusText, opt => opt.MapFrom(s => GetPreOrderStatusText(s.Status)));
+
+            CreateMap<CreatePreOrderDto, PreOrder>();
+            CreateMap<UpdatePreOrderDto, PreOrder>();
         }
+
+        private static string GetPreOrderStatusText(PreOrderStatus status) => status switch
+        {
+            PreOrderStatus.Pending => "Đang chờ",
+            PreOrderStatus.Arrived => "Đã lên kệ",
+            PreOrderStatus.Cancelled => "Đã hủy",
+            _ => "Không xác định"
+        };
 
         private static List<int> GetMissingVolumes(Series series)
         {

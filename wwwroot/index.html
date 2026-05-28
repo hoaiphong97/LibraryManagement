@@ -25,82 +25,263 @@
         }
     </script>
     <style>
-        body { font-family: 'Nunito', sans-serif; background: #FFF1F9; color: #4A4A6A; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #FFF1F9; }
-        ::-webkit-scrollbar-thumb { background: #F9A8D4; border-radius: 3px; }
+        /* ── Base ─────────────────────────────────────────────────── */
+        body {
+            font-family: 'Nunito', sans-serif;
+            color: #4A4A6A;
+            background: linear-gradient(-45deg, #FFF1F9, #FEF0FF, #F0F5FF, #FFF5F0, #F0FFF4);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
+        }
+
+        /* ── 1. Background gradient shift ─────────────────────────── */
+        @keyframes gradientShift {
+            0%   { background-position: 0%   50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0%   50%; }
+        }
+
+        /* ── 2. Floating particles ─────────────────────────────────── */
+        #particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        @keyframes floatUp {
+            0%   { transform: translateY(0) rotate(0deg)   scale(0.8); opacity: 0;    }
+            6%   {                                                        opacity: 0.65; }
+            90%  {                                                        opacity: 0.4;  }
+            100% { transform: translateY(-105vh) rotate(540deg) scale(1.1); opacity: 0; }
+        }
+
+        /* ── 3. Sidebar logo bob ───────────────────────────────────── */
+        .logo-bob {
+            display: inline-block;
+            animation: bob 2.4s ease-in-out infinite;
+        }
+        @keyframes bob {
+            0%, 100% { transform: translateY(0)    rotate(0deg);   }
+            28%       { transform: translateY(-8px) rotate(-7deg);  }
+            72%       { transform: translateY(-4px) rotate(5deg);   }
+        }
+
+        /* ── 4. Progress bar shimmer ───────────────────────────────── */
+        .progress-fill {
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -80%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: shimmerMove 2s linear infinite;
+        }
+        @keyframes shimmerMove {
+            0%   { left: -80%;  }
+            100% { left: 160%;  }
+        }
+
+        /* ── 5. Sidebar stat pulse ─────────────────────────────────── */
+        .stat-pulse {
+            animation: pulseSoft 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes pulseSoft {
+            0%, 100% { transform: scale(1);    }
+            50%       { transform: scale(1.08); }
+        }
+
+        /* ── 6. Sparkle star twinkle ───────────────────────────────── */
+        .sparkle {
+            display: inline-block;
+            animation: twinkle var(--dur, 2s) ease-in-out infinite;
+            animation-delay: var(--delay, 0s);
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.15; transform: scale(0.6) rotate(0deg);   }
+            50%       { opacity: 1;   transform: scale(1.4) rotate(25deg);  }
+        }
+
+        /* ── 7. Sidebar rainbow glow ───────────────────────────────── */
+        .sidebar-glow::after {
+            content: '';
+            position: absolute;
+            top: 0; right: -2px; bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom,
+                transparent 0%,
+                #F9A8D4 20%,
+                #C084FC 40%,
+                #93C5FD 60%,
+                #6EE7B7 80%,
+                transparent 100%);
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.35; transform: scaleY(0.9); }
+            50%       { opacity: 1;   transform: scaleY(1);   }
+        }
+
+        /* ── 8. Import drop zone border dance ─────────────────────── */
+        .drop-zone { animation: borderDance 3s ease-in-out infinite; }
+        @keyframes borderDance {
+            0%, 100% { border-color: #F9A8D4; box-shadow: 0 0 0 3px rgba(249,168,212,0.1); }
+            33%       { border-color: #C084FC; box-shadow: 0 0 0 3px rgba(192,132,252,0.1); }
+            66%       { border-color: #93C5FD; box-shadow: 0 0 0 3px rgba(147,197,253,0.1); }
+        }
+
+        /* ── Book card hover ───────────────────────────────────────── */
         .book-card { transition: transform .2s, box-shadow .2s; }
-        .book-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(249,168,212,.35); }
-        .nav-item.active { background: #F9A8D4; color: white; }
+        .book-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 16px 40px rgba(249,168,212,.45);
+        }
+
+        /* ── Volume book-spine hover ───────────────────────────────── */
+        .vol-cell { transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, z-index 0s; }
+        .vol-owned:hover {
+            transform: translateY(-10px) rotate(-5deg) scale(1.08) !important;
+            box-shadow: 3px 10px 16px rgba(0,0,0,0.22) !important;
+            z-index: 20;
+            position: relative;
+        }
+        .vol-missing:hover { transform: translateY(-5px) scale(1.05) !important; }
+
+        /* ── Nav active glow ───────────────────────────────────────── */
+        .nav-active {
+            background: linear-gradient(135deg, #F9A8D4, #E879F9);
+            color: white;
+            box-shadow: 0 4px 14px rgba(249,168,212,.5);
+        }
+
+        /* ── Fade in ───────────────────────────────────────────────── */
+        .fade-in { animation: fadeIn .35s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0);    }
+        }
+
+        /* ── Scrollbar ─────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #F9A8D4; border-radius: 3px; }
+
+        /* ── Stat card ─────────────────────────────────────────────── */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(249,168,212,.3);
+        }
+
+        /* ── Shelf container ───────────────────────────────────────── */
+        .shelf {
+            background: linear-gradient(180deg, #FFF8EE 0%, #FFF1DB 100%);
+            border-bottom: 6px solid #D4A267;
+            border-radius: 12px 12px 4px 4px;
+            box-shadow: inset 0 -2px 6px rgba(180,120,60,.15), 0 4px 8px rgba(180,120,60,.12);
+        }
+
         [x-cloak] { display: none !important; }
-        .fade-in { animation: fadeIn .3s ease; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     </style>
 </head>
 <body x-data="app()" x-init="init()" x-cloak>
 
-<div class="flex h-screen overflow-hidden">
+<!-- ── Particle layer (always moving) ─────────────────────────────── -->
+<div id="particles" aria-hidden="true"></div>
 
-    <!-- SIDEBAR -->
-    <aside class="w-64 bg-white shadow-lg flex flex-col p-6 gap-4 flex-shrink-0">
+<div class="flex h-screen overflow-hidden relative z-10">
+
+    <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+    <aside class="sidebar-glow w-64 bg-white/90 backdrop-blur shadow-lg flex flex-col p-6 gap-4 flex-shrink-0 relative">
         <div class="text-center mb-4">
-            <div class="text-4xl mb-2">📚</div>
+            <div class="text-4xl mb-2"><span class="logo-bob">📚</span></div>
             <h1 class="text-xl font-extrabold text-pink-400">Tủ Sách</h1>
             <p class="text-xs text-purple-300 font-semibold">Kim Hà</p>
         </div>
         <nav class="flex flex-col gap-2">
-            <button @click="currentPage='dashboard'" :class="currentPage==='dashboard' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
-                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+            <button @click="currentPage='dashboard'"
+                    :class="currentPage==='dashboard' ? 'nav-active' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
                 🏠 <span>Tổng quan</span>
             </button>
-            <button @click="currentPage='series'" :class="currentPage==='series' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
-                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+            <button @click="currentPage='series'"
+                    :class="currentPage==='series' ? 'nav-active' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
                 📦 <span>Bộ sách</span>
             </button>
-            <button @click="currentPage='categories'" :class="currentPage==='categories' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
-                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+            <button @click="currentPage='categories'"
+                    :class="currentPage==='categories' ? 'nav-active' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
                 🏷️ <span>Thể loại</span>
             </button>
-            <button @click="currentPage='import'" :class="currentPage==='import' ? 'bg-pink-400 text-white' : 'hover:bg-pink-50'"
-                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-colors">
+            <button @click="currentPage='import'"
+                    :class="currentPage==='import' ? 'nav-active' : 'hover:bg-pink-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
                 📥 <span>Import sách</span>
             </button>
+            <button @click="currentPage='preorders'"
+                    :class="currentPage==='preorders' ? 'nav-active' : 'hover:bg-purple-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
+                🛒 <span>Pre-order</span>
+                <span x-show="pendingPreOrderCount > 0"
+                      class="ml-auto bg-red-400 text-white text-xs font-bold px-2 py-0.5 rounded-full leading-none"
+                      x-text="pendingPreOrderCount"></span>
+            </button>
         </nav>
-        <div class="mt-auto bg-pink-50 rounded-2xl p-4 text-center">
-            <p class="text-3xl font-extrabold text-pink-400" x-text="stats.totalSeries"></p>
+        <div class="mt-auto bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4 text-center border border-pink-100">
+            <p class="text-3xl font-extrabold text-pink-400 stat-pulse" x-text="stats.totalSeries"></p>
             <p class="text-xs text-purple-400 font-semibold">Tổng bộ sách</p>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
     <main class="flex-1 overflow-y-auto p-8">
 
-        <!-- DASHBOARD -->
+        <!-- DASHBOARD ─────────────────────────────────────────────── -->
         <div x-show="currentPage==='dashboard'" class="fade-in">
-            <h2 class="text-3xl font-extrabold text-pink-400 mb-8">🌸 Xin chào Kim Hà!</h2>
+            <h2 class="text-3xl font-extrabold text-pink-400 mb-2">
+                🌸 Xin chào Kim Hà!
+            </h2>
+            <p class="text-sm text-purple-300 font-semibold mb-8">Hôm nay bạn muốn đọc gì? ✨</p>
+
+            <!-- Stat cards -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                <div class="stat-card bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <span class="sparkle text-lg absolute top-2 right-3" style="--delay:0s; --dur:1.8s">✨</span>
                     <div class="text-4xl mb-2">📚</div>
                     <p class="text-3xl font-extrabold text-pink-400" x-text="stats.totalSeries"></p>
                     <p class="text-sm text-gray-500">Bộ sách</p>
                 </div>
-                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
-                    <div class="text-4xl mb-2">📦</div>
+                <div class="stat-card bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <span class="sparkle text-lg absolute top-2 right-3" style="--delay:.6s; --dur:2.2s">✨</span>
+                    <div class="text-4xl mb-2">📖</div>
                     <p class="text-3xl font-extrabold text-blue-400" x-text="stats.totalVolumes"></p>
                     <p class="text-sm text-gray-500">Tập đang có</p>
                 </div>
-                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
-                    <div class="text-4xl mb-2">⚠️</div>
+                <div class="stat-card bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <span class="sparkle text-lg absolute top-2 right-3" style="--delay:1.2s; --dur:1.5s">✨</span>
+                    <div class="text-4xl mb-2">🛒</div>
                     <p class="text-3xl font-extrabold text-orange-400" x-text="stats.missingSeries"></p>
-                    <p class="text-sm text-gray-500">Bộ còn thiếu tập</p>
+                    <p class="text-sm text-gray-500">Bộ còn thiếu</p>
                 </div>
-                <div class="bg-white rounded-2xl p-6 shadow-sm text-center">
+                <div class="stat-card bg-white rounded-2xl p-6 shadow-sm text-center">
+                    <span class="sparkle text-lg absolute top-2 right-3" style="--delay:1.8s; --dur:2s">✨</span>
                     <div class="text-4xl mb-2">🏷️</div>
                     <p class="text-3xl font-extrabold text-purple-400" x-text="stats.totalCategories"></p>
                     <p class="text-sm text-gray-500">Thể loại</p>
                 </div>
             </div>
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
+
+            <div class="bg-white/80 backdrop-blur rounded-2xl p-6 shadow-sm">
                 <h3 class="text-lg font-extrabold text-gray-700 mb-4">📌 Bộ sách thêm gần đây</h3>
                 <div x-show="recentSeries.length === 0" class="text-center py-8 text-gray-400">
                     Chưa có bộ sách nào. Hãy import hoặc thêm mới!
@@ -127,48 +308,52 @@
             </div>
         </div>
 
-        <!-- SERIES PAGE -->
+        <!-- SERIES PAGE ────────────────────────────────────────────── -->
         <div x-show="currentPage==='series'" class="fade-in">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-3xl font-extrabold text-pink-400">📦 Bộ sách</h2>
-                <button @click="openSeriesModal()" class="bg-orange-400 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-500 transition-colors shadow-md">
+                <button @click="openSeriesModal()"
+                        class="bg-gradient-to-r from-orange-400 to-pink-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
                     ➕ Thêm bộ sách
                 </button>
             </div>
             <div class="mb-6">
                 <input x-model="seriesSearch"
                        placeholder="🔍 Tìm tên bộ sách, tác giả, thể loại..."
-                       class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400" />
+                       class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 bg-white/80" />
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 <template x-for="s in filteredSeriesList" :key="s.id">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="bg-white/90 backdrop-blur rounded-2xl p-6 shadow-sm transition-all hover:shadow-md">
                         <div class="flex justify-between items-start mb-1">
-                            <h3 class="font-extrabold text-gray-700 text-lg" x-text="s.name"></h3>
-                            <div class="flex gap-2">
-                                <button @click="openSeriesModal(s)" class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
-                                <button @click="deleteSeries(s.id)" class="text-red-400 hover:text-red-600 p-1">🗑️</button>
+                            <h3 class="font-extrabold text-gray-700 text-lg leading-tight flex-1 mr-2" x-text="s.name"></h3>
+                            <div class="flex gap-1 flex-shrink-0">
+                                <button @click="openSeriesModal(s)" class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                <button @click="deleteSeries(s.id)" class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-400 mb-1" x-text="s.author || 'Chưa có tác giả'"></p>
+                        <p class="text-sm text-gray-400 mb-2" x-text="s.author || 'Chưa có tác giả'"></p>
                         <template x-if="s.categoryName">
                             <span class="inline-block text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full font-semibold mb-3"
                                   x-text="s.categoryName"></span>
                         </template>
 
-                        <!-- Volume preview (10 tập đầu) -->
-                        <div class="flex flex-wrap gap-2 mb-4" x-show="s.totalVolumes">
-                            <template x-for="i in Math.min(s.totalVolumes, 10)" :key="i">
-                                <span class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold border-b-2"
-                                      :class="s.ownedVolumes && s.ownedVolumes.includes(i)
-                                          ? 'text-gray-600 border-gray-400'
-                                          : 'text-red-500 border-red-400'">
-                                    <span x-text="String(i).padStart(2,'0')"></span>
-                                </span>
+                        <!-- Mini book-spine shelf preview -->
+                        <div class="shelf flex flex-wrap gap-1 items-end px-3 pt-3 pb-1 mb-4" x-show="s.totalVolumes">
+                            <template x-for="i in Math.min(s.totalVolumes, 12)" :key="i">
+                                <div class="vol-cell flex items-end justify-center pb-0.5 text-[8px] font-bold select-none"
+                                     :class="(s.ownedVolumes && s.ownedVolumes.includes(i)) ? 'vol-owned' : 'vol-missing'"
+                                     :style="(s.ownedVolumes && s.ownedVolumes.includes(i))
+                                         ? `width:18px;height:34px;background:hsl(${(i*37+15)%360},52%,72%);border-radius:2px 4px 4px 2px;border-left:2.5px solid hsl(${(i*37+15)%360},52%,58%);box-shadow:2px 2px 4px rgba(0,0,0,0.13);color:white`
+                                         : `width:18px;height:34px;background:#FFF0F0;border:1.5px dashed #FCA5A5;border-radius:3px;color:#F87171`">
+                                    <span x-text="i"></span>
+                                </div>
                             </template>
-                            <span x-show="s.totalVolumes > 10"
-                                  class="w-8 h-8 flex items-center justify-center text-gray-400 text-sm font-bold">...</span>
+                            <span x-show="s.totalVolumes > 12"
+                                  class="text-amber-500 text-xs font-bold self-end mb-1 ml-1">
+                                +<span x-text="s.totalVolumes - 12"></span>
+                            </span>
                         </div>
 
                         <!-- Notes preview -->
@@ -187,20 +372,20 @@
                                           x-text="`${s.currentVolumes}/${s.totalVolumes || '?'} tập`"></span>
                                 </div>
                                 <div class="w-full bg-orange-100 rounded-full h-2" x-show="s.totalVolumes">
-                                    <div class="bg-orange-400 h-2 rounded-full transition-all"
+                                    <div class="progress-fill bg-gradient-to-r from-orange-400 to-pink-400 h-2 rounded-full transition-all"
                                          :style="`width:${Math.min(100,(s.currentVolumes/(s.totalVolumes||1))*100)}%`"></div>
                                 </div>
                             </div>
                             <button @click="openVolumeMap(s)"
                                     class="bg-orange-100 text-orange-500 px-3 py-2 rounded-xl text-xs font-bold hover:bg-orange-200 transition-colors whitespace-nowrap">
-                                Xem mục lục
+                                Xem kệ sách
                             </button>
                         </div>
 
                         <!-- Missing volumes -->
                         <template x-if="s.missingVolumes && s.missingVolumes.length > 0">
                             <p class="text-xs text-red-400 font-semibold mt-3">
-                                ⚠️ Thiếu: <span x-text="s.missingVolumes.join(', ')"></span>
+                                ⚠️ Thiếu: <span x-text="s.missingVolumes.slice(0,8).join(', ') + (s.missingVolumes.length > 8 ? '...' : '')"></span>
                             </p>
                         </template>
                     </div>
@@ -217,31 +402,33 @@
             </div>
         </div>
 
-        <!-- CATEGORIES PAGE -->
+        <!-- CATEGORIES PAGE ────────────────────────────────────────── -->
         <div x-show="currentPage==='categories'" class="fade-in">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-3xl font-extrabold text-pink-400">🏷️ Thể loại</h2>
-                <button @click="openCategoryModal()" class="bg-blue-400 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors shadow-md">
+                <button @click="openCategoryModal()"
+                        class="bg-gradient-to-r from-blue-400 to-purple-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
                     ➕ Thêm thể loại
                 </button>
             </div>
             <div class="mb-4">
                 <input x-model="categorySearch"
                        placeholder="🔍 Tìm thể loại..."
-                       class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400" />
+                       class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 bg-white/80" />
             </div>
             <div x-show="categories.length > 0 && filteredCategories.length === 0" class="text-center py-10">
                 <div class="text-5xl mb-3">🔍</div>
-                <p class="text-gray-400 font-semibold">Không tìm thấy thể loại nào khớp với "<span x-text="categorySearch"></span>"</p>
+                <p class="text-gray-400 font-semibold">Không tìm thấy thể loại nào</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 <template x-for="cat in filteredCategories" :key="cat.id">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm">
+                    <div class="rounded-2xl p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 overflow-hidden"
+                         :style="getCategoryStyle(cat.name)">
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="font-extrabold text-gray-700 text-lg" x-text="cat.name"></h3>
                             <div class="flex gap-2">
-                                <button @click="openCategoryModal(cat)" class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
-                                <button @click="deleteCategory(cat.id)" class="text-red-400 hover:text-red-600 p-1">🗑️</button>
+                                <button @click="openCategoryModal(cat)" class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                <button @click="deleteCategory(cat.id)" class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
                             </div>
                         </div>
                         <p class="text-sm text-gray-400 mb-4" x-text="cat.description || 'Chưa có mô tả'"></p>
@@ -254,16 +441,16 @@
             </div>
         </div>
 
-        <!-- IMPORT PAGE -->
+        <!-- IMPORT PAGE ─────────────────────────────────────────────── -->
         <div x-show="currentPage==='import'" class="fade-in">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-3xl font-extrabold text-pink-400">📥 Import sách từ Excel</h2>
                 <a href="/api/import/template" download
-                   class="flex items-center gap-2 bg-green-400 text-white px-5 py-3 rounded-xl font-bold hover:bg-green-500 transition-colors shadow-md">
+                   class="flex items-center gap-2 bg-gradient-to-r from-green-400 to-teal-400 text-white px-5 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
                     📄 Tải file mẫu
                 </a>
             </div>
-            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 text-sm text-blue-700 max-w-xl">
+            <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 mb-6 text-sm text-blue-700 max-w-xl">
                 <p class="font-bold mb-2">📋 Cấu trúc file Excel (mỗi dòng = 1 tựa sách):</p>
                 <ul class="list-disc list-inside space-y-1">
                     <li><strong>Tên sách</strong> (bắt buộc) — tên bộ sách</li>
@@ -274,14 +461,14 @@
                     <li>Ghi chú</li>
                 </ul>
             </div>
-            <div class="bg-white rounded-2xl p-8 shadow-sm max-w-xl">
+            <div class="bg-white/90 backdrop-blur rounded-2xl p-8 shadow-sm max-w-xl">
                 <div x-show="!importResult">
-                    <div class="border-4 border-dashed border-pink-200 rounded-2xl p-12 text-center mb-6"
+                    <div class="drop-zone border-4 border-dashed border-pink-300 rounded-2xl p-12 text-center mb-6 transition-all"
                          @dragover.prevent @drop.prevent="handleFileDrop($event)">
                         <div class="text-6xl mb-4">📂</div>
                         <p class="font-bold text-gray-600 mb-2">Kéo thả file Excel vào đây</p>
                         <p class="text-gray-400 text-sm mb-6">hoặc</p>
-                        <label class="cursor-pointer bg-pink-400 text-white px-8 py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors">
+                        <label class="cursor-pointer bg-gradient-to-r from-pink-400 to-purple-400 text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
                             Chọn file .xlsx
                             <input type="file" accept=".xlsx" class="hidden" @change="handleFileSelect($event)" />
                         </label>
@@ -326,19 +513,176 @@
                         </div>
                     </template>
                     <button @click="importResult = null"
-                            class="w-full bg-pink-400 text-white py-3 rounded-xl font-bold hover:bg-pink-500 transition-colors">
+                            class="w-full bg-gradient-to-r from-pink-400 to-purple-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
                         Import thêm
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- PREORDER PAGE ──────────────────────────────────────────── -->
+        <div x-show="currentPage==='preorders'" class="fade-in">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-purple-400">🛒 Pre-order</h2>
+                    <p class="text-sm text-purple-300 mt-1">Những cuốn sách đang chờ về tay 💜</p>
+                </div>
+                <button @click="openPreOrderModal()"
+                        class="bg-gradient-to-r from-purple-400 to-pink-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
+                    ➕ Thêm pre-order
+                </button>
+            </div>
+
+            <!-- Summary stats -->
+            <div class="grid grid-cols-3 gap-4 mb-6 mt-6">
+                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-2xl font-extrabold text-purple-400" x-text="preOrders.filter(p => p.status === 0).length"></p>
+                    <p class="text-xs text-gray-500 mt-1">🕐 Đang chờ</p>
+                </div>
+                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-2xl font-extrabold text-green-400" x-text="preOrders.filter(p => p.status === 1).length"></p>
+                    <p class="text-xs text-gray-500 mt-1">✅ Đã lên kệ</p>
+                </div>
+                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-2xl font-extrabold text-gray-400" x-text="preOrders.filter(p => p.status === 2).length"></p>
+                    <p class="text-xs text-gray-500 mt-1">❌ Đã hủy</p>
+                </div>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button @click="preOrderFilter = null"
+                        :class="preOrderFilter === null ? 'bg-purple-400 text-white shadow-md' : 'bg-white text-purple-500 hover:bg-purple-50'"
+                        class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
+                    Tất cả (<span x-text="preOrders.length"></span>)
+                </button>
+                <button @click="preOrderFilter = 0"
+                        :class="preOrderFilter === 0 ? 'bg-purple-400 text-white shadow-md' : 'bg-white text-purple-500 hover:bg-purple-50'"
+                        class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
+                    🕐 Đang chờ
+                </button>
+                <button @click="preOrderFilter = 1"
+                        :class="preOrderFilter === 1 ? 'bg-green-400 text-white shadow-md' : 'bg-white text-green-600 hover:bg-green-50'"
+                        class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
+                    ✅ Đã lên kệ
+                </button>
+                <button @click="preOrderFilter = 2"
+                        :class="preOrderFilter === 2 ? 'bg-gray-400 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'"
+                        class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
+                    ❌ Đã hủy
+                </button>
+            </div>
+
+            <!-- Empty state -->
+            <div x-show="filteredPreOrders.length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">🛒</div>
+                <p class="text-gray-400 font-semibold">Chưa có pre-order nào</p>
+                <p class="text-gray-300 text-sm mt-1">Thêm những cuốn sách bạn đang mong chờ!</p>
+            </div>
+
+            <!-- Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <template x-for="po in filteredPreOrders" :key="po.id">
+                    <div class="bg-white/90 backdrop-blur rounded-2xl p-5 shadow-sm transition-all hover:shadow-md flex flex-col"
+                         :class="po.status === 2 ? 'opacity-55' : ''">
+
+                        <!-- Top row: status badge + actions -->
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs font-bold px-3 py-1 rounded-full"
+                                  :class="{
+                                      'bg-purple-100 text-purple-600': po.status === 0,
+                                      'bg-green-100 text-green-600':  po.status === 1,
+                                      'bg-gray-100 text-gray-500':    po.status === 2
+                                  }">
+                                <span x-show="po.status === 0" class="inline-block animate-pulse">🕐</span>
+                                <span x-show="po.status === 1">✅</span>
+                                <span x-show="po.status === 2">❌</span>
+                                <span x-text="po.statusText"></span>
+                            </span>
+                            <div class="flex gap-1" x-show="po.status !== 1">
+                                <button @click="openPreOrderModal(po)"
+                                        class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                <button @click="deletePreOrder(po.id)"
+                                        class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="font-extrabold text-gray-700 text-base leading-snug mb-1" x-text="po.title"></h3>
+
+                        <!-- Author · Publisher -->
+                        <p class="text-xs text-gray-400 mb-2">
+                            <span x-text="po.author || 'Chưa có tác giả'"></span>
+                            <template x-if="po.publisher">
+                                <span> · <span class="text-purple-500 font-semibold" x-text="po.publisher"></span></span>
+                            </template>
+                        </p>
+
+                        <!-- Series link -->
+                        <template x-if="po.seriesName || po.volumeNumber">
+                            <p class="mb-2">
+                                <span class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                                    📦 <span x-text="po.seriesName || 'Chưa link bộ sách'"></span>
+                                    <template x-if="po.volumeNumber">
+                                        <span> — Tập <span x-text="po.volumeNumber"></span></span>
+                                    </template>
+                                </span>
+                            </p>
+                        </template>
+
+                        <!-- Expected date -->
+                        <template x-if="po.expectedDate">
+                            <p class="text-xs text-blue-400 font-semibold mb-2">
+                                📅 Dự kiến: <span x-text="new Date(po.expectedDate).toLocaleDateString('vi-VN')"></span>
+                            </p>
+                        </template>
+
+                        <!-- Notes -->
+                        <template x-if="po.notes">
+                            <p class="text-xs text-purple-400 italic mb-2 line-clamp-2">
+                                📝 <span x-text="po.notes"></span>
+                            </p>
+                        </template>
+
+                        <!-- Shelved: link to book -->
+                        <template x-if="po.status === 1 && po.bookId">
+                            <p class="text-xs text-green-500 font-semibold mb-2">
+                                📚 Đã vào kệ sách (Book #<span x-text="po.bookId"></span>)
+                            </p>
+                        </template>
+
+                        <!-- Spacer -->
+                        <div class="flex-1"></div>
+
+                        <!-- Action buttons — chỉ khi Pending -->
+                        <div x-show="po.status === 0" class="flex gap-2 mt-4 pt-3 border-t border-purple-50">
+                            <button @click="openShelveModal(po)"
+                                    class="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity">
+                                📚 Lên kệ
+                            </button>
+                            <button @click="cancelPreOrder(po.id)"
+                                    class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors">
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+        </div>
+
     </main>
 </div>
 
-<!-- CATEGORY MODAL -->
-<div x-show="showCategoryModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showCategoryModal=false">
-    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop>
+<!-- ── CATEGORY MODAL ─────────────────────────────────────────────── -->
+<div x-show="showCategoryModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showCategoryModal=false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
         <h3 class="text-2xl font-extrabold text-blue-400 mb-6" x-text="editingCategory?.id ? '✏️ Sửa thể loại' : '➕ Thêm thể loại'"></h3>
         <div class="space-y-4">
             <input x-model="editingCategory.name" placeholder="Tên thể loại *"
@@ -347,15 +691,19 @@
                       class="w-full border-2 border-blue-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-300"></textarea>
         </div>
         <div class="flex gap-3 mt-6">
-            <button @click="saveCategory()" class="flex-1 bg-blue-400 text-white py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors">💾 Lưu</button>
-            <button @click="showCategoryModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">Huỷ</button>
+            <button @click="saveCategory()" class="flex-1 bg-gradient-to-r from-blue-400 to-purple-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">💾 Lưu</button>
+            <button @click="showCategoryModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Huỷ</button>
         </div>
     </div>
 </div>
 
-<!-- SERIES MODAL -->
-<div x-show="showSeriesModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showSeriesModal=false">
-    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+<!-- ── SERIES MODAL ───────────────────────────────────────────────── -->
+<div x-show="showSeriesModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showSeriesModal=false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
         <h3 class="text-2xl font-extrabold text-orange-400 mb-6"
             x-text="editingSeries?.id ? '✏️ Sửa bộ sách' : '➕ Thêm bộ sách'"></h3>
 
@@ -397,14 +745,14 @@
                     📚 Đánh dấu các tập bạn đã có
                     <span class="text-orange-400" x-text="`(${(editingSeries.ownedVolumeNumbers?.length || 0)}/${editingSeries.totalVolumes})`"></span>
                 </label>
-                <div class="bg-orange-50 rounded-xl p-4 max-h-48 overflow-y-auto">
-                    <div class="grid grid-cols-10 gap-2">
+                <div class="shelf rounded-xl p-4 max-h-48 overflow-y-auto">
+                    <div class="flex flex-wrap gap-2 items-end">
                         <template x-for="i in editingSeries.totalVolumes" :key="i">
                             <button type="button" @click="toggleOwnedVolume(i)"
-                                    :class="(editingSeries.ownedVolumeNumbers || []).includes(i)
-                                        ? 'bg-orange-400 text-white'
-                                        : 'bg-white text-gray-400 border-2 border-orange-200 hover:border-orange-400'"
-                                    class="w-10 h-10 rounded-lg text-xs font-bold transition-colors">
+                                    class="vol-cell w-10 h-10 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
+                                    :style="(editingSeries.ownedVolumeNumbers || []).includes(i)
+                                        ? `background:hsl(${(i*37+15)%360},52%,72%);border-left:3px solid hsl(${(i*37+15)%360},52%,58%);box-shadow:2px 2px 6px rgba(0,0,0,0.12);color:white`
+                                        : 'background:white;border:2px solid #FED7AA;color:#9CA3AF'">
                                 <span x-text="String(i).padStart(2,'0')"></span>
                             </button>
                         </template>
@@ -412,11 +760,11 @@
                 </div>
                 <div class="flex gap-2 mt-2">
                     <button type="button" @click="selectAllVolumes()"
-                            class="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-lg font-semibold hover:bg-orange-200">
+                            class="text-xs bg-orange-100 text-orange-600 px-3 py-1 rounded-lg font-semibold hover:bg-orange-200 transition-colors">
                         Chọn tất cả
                     </button>
                     <button type="button" @click="clearAllVolumes()"
-                            class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-semibold hover:bg-gray-200">
+                            class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
                         Xóa tất cả
                     </button>
                 </div>
@@ -427,15 +775,19 @@
         </div>
 
         <div class="flex gap-3 mt-6">
-            <button @click="saveSeries()" class="flex-1 bg-orange-400 text-white py-3 rounded-xl font-bold hover:bg-orange-500 transition-colors">💾 Lưu</button>
-            <button @click="showSeriesModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold">Huỷ</button>
+            <button @click="saveSeries()" class="flex-1 bg-gradient-to-r from-orange-400 to-pink-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">💾 Lưu</button>
+            <button @click="showSeriesModal=false" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">Huỷ</button>
         </div>
     </div>
 </div>
 
-<!-- VOLUME MAP MODAL -->
-<div x-show="showVolumeMap" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showVolumeMap=false">
-    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+<!-- ── VOLUME MAP MODAL (Bookshelf) ──────────────────────────────── -->
+<div x-show="showVolumeMap" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showVolumeMap=false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
         <template x-if="selectedSeries">
             <div>
                 <div class="flex justify-between items-start mb-2">
@@ -447,52 +799,56 @@
                                   x-text="selectedSeries.categoryName"></span>
                         </template>
                     </div>
-                    <button @click="showVolumeMap=false" class="text-gray-400 hover:text-gray-600 text-2xl">✕</button>
+                    <button @click="showVolumeMap=false" class="text-gray-400 hover:text-gray-600 text-2xl hover:scale-110 transition-transform">✕</button>
                 </div>
 
-                <div class="flex gap-4 mb-6 text-sm mt-3">
-                    <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold"
+                <div class="flex gap-3 mb-5 flex-wrap mt-3">
+                    <span class="bg-orange-100 text-orange-600 px-3 py-1 rounded-full font-bold text-sm"
                           x-text="`📦 ${selectedSeries.currentVolumes}/${selectedSeries.totalVolumes || '?'} tập`"></span>
                     <span x-show="selectedSeries.missingVolumes && selectedSeries.missingVolumes.length > 0"
-                          class="bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold"
+                          class="bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold text-sm"
                           x-text="`⚠️ Thiếu ${selectedSeries.missingVolumes?.length} tập`"></span>
                     <span x-show="selectedSeries.isOngoing"
-                          class="bg-blue-100 text-blue-500 px-3 py-1 rounded-full font-bold">📰 Đang xuất bản</span>
+                          class="bg-blue-100 text-blue-500 px-3 py-1 rounded-full font-bold text-sm">📰 Đang xuất bản</span>
                 </div>
 
-                <!-- Volume Grid -->
-                <div class="grid grid-cols-10 gap-3 mb-6 bg-gray-50 rounded-2xl p-6">
+                <!-- 📚 Kệ sách ─────────────────────────── -->
+                <p class="text-xs font-bold text-amber-600 mb-2">🪵 Kệ sách của bạn</p>
+                <div class="shelf flex flex-wrap gap-1.5 items-end px-5 pt-5 pb-2 mb-3"
+                     style="min-height: 90px;">
                     <template x-for="i in (selectedSeries.totalVolumes || 0)" :key="i">
                         <button type="button" @click="toggleVolumeInSeries(i)"
-                                class="flex items-center justify-center w-10 h-10 rounded-lg font-bold text-sm transition-all hover:scale-110"
-                                :class="selectedSeries.ownedVolumes && selectedSeries.ownedVolumes.includes(i)
-                                    ? 'bg-white text-gray-700 border-2 border-gray-300 shadow-sm'
-                                    : 'bg-red-50 text-red-500 border-2 border-red-200 border-dashed'">
+                                class="vol-cell flex items-end justify-center pb-1 text-[9px] font-bold cursor-pointer select-none"
+                                :class="(selectedSeries.ownedVolumes && selectedSeries.ownedVolumes.includes(i)) ? 'vol-owned' : 'vol-missing'"
+                                :title="(selectedSeries.ownedVolumes && selectedSeries.ownedVolumes.includes(i)) ? `Tập ${i} — Nhấn để bỏ` : `Tập ${i} — Nhấn để thêm`"
+                                :style="(selectedSeries.ownedVolumes && selectedSeries.ownedVolumes.includes(i))
+                                    ? `width:26px;height:54px;background:hsl(${(i*37+15)%360},52%,70%);border-radius:2px 6px 6px 2px;border-left:3px solid hsl(${(i*37+15)%360},52%,55%);box-shadow:2px 4px 8px rgba(0,0,0,0.15);color:white`
+                                    : `width:26px;height:54px;background:#FFF5F5;border:2px dashed #FCA5A5;border-radius:3px;color:#F87171`">
                             <span x-text="String(i).padStart(2,'0')"></span>
                         </button>
                     </template>
                 </div>
-                <p class="text-xs text-gray-400 text-center mb-4">💡 Nhấn vào số tập để đánh dấu đã có / chưa có</p>
-
-                <!-- Nút thêm tập mới (cho bộ đang xuất bản) -->
-                <div x-show="selectedSeries.isOngoing" class="mb-6 p-4 bg-blue-50 rounded-xl">
-                    <p class="text-sm font-bold text-blue-600 mb-2">📰 Bộ này đang xuất bản thêm tập mới</p>
-                    <button @click="addNewVolume()"
-                            class="bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-500">
-                        ➕ Thêm tập mới (Tập <span x-text="(selectedSeries.totalVolumes || 0) + 1"></span>)
-                    </button>
-                </div>
+                <p class="text-xs text-gray-400 text-center mb-5">💡 Nhấn vào gáy sách để đánh dấu đã có / chưa có</p>
 
                 <!-- Legend -->
-                <div class="flex gap-6 text-sm mb-6">
+                <div class="flex gap-6 text-sm mb-5">
                     <span class="flex items-center gap-2">
-                        <span class="w-8 h-8 flex items-center justify-center bg-white border-2 border-gray-300 rounded-lg text-xs font-bold">01</span>
-                        <span class="text-gray-500">Đã có</span>
+                        <span class="inline-block" style="width:20px;height:38px;background:hsl(52,52%,70%);border-radius:2px 5px 5px 2px;border-left:3px solid hsl(52,52%,55%);box-shadow:2px 3px 6px rgba(0,0,0,0.12)"></span>
+                        <span class="text-gray-500 text-xs">Đã có</span>
                     </span>
                     <span class="flex items-center gap-2">
-                        <span class="w-8 h-8 flex items-center justify-center bg-red-50 border-2 border-red-200 border-dashed rounded-lg text-xs font-bold text-red-500">01</span>
-                        <span class="text-gray-500">Đang thiếu</span>
+                        <span class="inline-block" style="width:20px;height:38px;background:#FFF5F5;border:2px dashed #FCA5A5;border-radius:3px"></span>
+                        <span class="text-gray-500 text-xs">Đang thiếu</span>
                     </span>
+                </div>
+
+                <!-- Nút thêm tập mới (cho bộ đang xuất bản) -->
+                <div x-show="selectedSeries.isOngoing" class="mb-5 p-4 bg-blue-50 rounded-xl">
+                    <p class="text-sm font-bold text-blue-600 mb-2">📰 Bộ này đang xuất bản thêm tập mới</p>
+                    <button @click="addNewVolume()"
+                            class="bg-gradient-to-r from-blue-400 to-purple-400 text-white px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity">
+                        ➕ Thêm tập mới (Tập <span x-text="(selectedSeries.totalVolumes || 0) + 1"></span>)
+                    </button>
                 </div>
 
                 <!-- Notes -->
@@ -502,7 +858,7 @@
                               placeholder="VD: Đang chờ tái bản tập 5, mua ở Fahasa..."
                               class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 text-sm"></textarea>
                     <button @click="saveSeriesNotes()"
-                            class="mt-3 bg-orange-400 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-500 transition-colors text-sm">
+                            class="mt-3 bg-gradient-to-r from-orange-400 to-pink-400 text-white px-6 py-2 rounded-xl font-bold hover:opacity-90 transition-opacity text-sm">
                         💾 Lưu ghi chú
                     </button>
                 </div>
@@ -511,7 +867,158 @@
     </div>
 </div>
 
-<!-- TOAST CONTAINER -->
+<!-- ── PREORDER MODAL ────────────────────────────────────────────── -->
+<div x-show="showPreOrderModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showPreOrderModal=false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" @click.stop
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+
+        <h3 class="text-2xl font-extrabold text-purple-400 mb-6"
+            x-text="editingPreOrder?.id ? '✏️ Sửa pre-order' : '🛒 Thêm pre-order mới'"></h3>
+
+        <div class="space-y-4">
+            <!-- Title -->
+            <input x-model="editingPreOrder.title" placeholder="Tên sách *"
+                   class="w-full border-2 border-purple-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-400" />
+
+            <!-- Author + Publisher -->
+            <div class="grid grid-cols-2 gap-3">
+                <input x-model="editingPreOrder.author" placeholder="Tác giả"
+                       class="border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300" />
+                <input x-model="editingPreOrder.publisher" placeholder="Nơi pre-order (VD: NXB Kim Đồng)"
+                       class="border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300" />
+            </div>
+
+            <!-- Series link (optional) -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">📦 Thuộc bộ sách (tuỳ chọn)</label>
+                <select x-model="editingPreOrder.seriesId"
+                        class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400">
+                    <option value="">-- Không thuộc bộ nào --</option>
+                    <template x-for="s in seriesList" :key="s.id">
+                        <option :value="s.id" x-text="s.name"></option>
+                    </template>
+                </select>
+            </div>
+
+            <!-- Volume number -->
+            <template x-if="editingPreOrder.seriesId">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Số tập</label>
+                    <input x-model.number="editingPreOrder.volumeNumber" type="number" min="1" placeholder="VD: 108"
+                           class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
+                </div>
+            </template>
+
+            <!-- Expected date -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">📅 Ngày dự kiến về (tuỳ chọn)</label>
+                <input x-model="editingPreOrder.expectedDate" type="date"
+                       class="w-full border-2 border-blue-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-300" />
+            </div>
+
+            <!-- Notes -->
+            <textarea x-model="editingPreOrder.notes" rows="3"
+                      placeholder="Ghi chú (VD: Pre-order ở NXB Kim Đồng, tặng kèm bookmark...)"
+                      class="w-full border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300"></textarea>
+
+            <!-- Status (chỉ khi edit) -->
+            <template x-if="editingPreOrder.id">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Trạng thái</label>
+                    <select x-model.number="editingPreOrder.status"
+                            class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gray-400">
+                        <option value="0">🕐 Đang chờ</option>
+                        <option value="2">❌ Đã hủy</option>
+                    </select>
+                </div>
+            </template>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button @click="savePreOrder()"
+                    class="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
+                💾 Lưu
+            </button>
+            <button @click="showPreOrderModal=false"
+                    class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                Huỷ
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── SHELVE MODAL ──────────────────────────────────────────────── -->
+<div x-show="showShelveModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showShelveModal=false"
+     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+
+        <h3 class="text-2xl font-extrabold text-purple-400 mb-1">📚 Lên kệ</h3>
+        <template x-if="shelvingPreOrder">
+            <p class="text-sm text-gray-500 mb-6">
+                Đưa <strong x-text="shelvingPreOrder.title"></strong> vào kệ sách
+            </p>
+        </template>
+
+        <div class="space-y-4">
+            <!-- Chọn bộ sách -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">📦 Bộ sách *</label>
+                <select x-model="shelveDto.seriesId"
+                        class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400">
+                    <option value="">-- Chọn bộ sách --</option>
+                    <template x-for="s in seriesList" :key="s.id">
+                        <option :value="s.id" x-text="s.name"></option>
+                    </template>
+                </select>
+                <p class="text-xs text-gray-400 mt-1">Nếu pre-order đã được liên kết sẵn, giữ nguyên hoặc đổi lại</p>
+            </div>
+
+            <!-- Số tập -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Số tập</label>
+                <input x-model.number="shelveDto.volumeNumber" type="number" min="1"
+                       class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
+            </div>
+
+            <!-- Phiên bản -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Phiên bản</label>
+                <select x-model.number="shelveDto.edition"
+                        class="w-full border-2 border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-400">
+                    <option value="0">📗 Bản thường</option>
+                    <option value="1">⭐ Bản đặc biệt</option>
+                    <option value="2">💎 Bản giới hạn</option>
+                    <option value="3">👑 Bản sưu tầm</option>
+                </select>
+            </div>
+
+            <!-- Info box -->
+            <div class="bg-purple-50 rounded-xl p-4 text-xs text-purple-500 leading-relaxed">
+                💡 Sau khi lên kệ, sách sẽ xuất hiện trong <strong>Bộ sách</strong> và pre-order này
+                sẽ chuyển sang trạng thái <strong>Đã lên kệ ✅</strong>
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button @click="executeShelve()"
+                    class="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
+                📚 Lên kệ ngay!
+            </button>
+            <button @click="showShelveModal=false"
+                    class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
+                Huỷ
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── TOAST CONTAINER ───────────────────────────────────────────── -->
 <div class="fixed top-5 right-5 z-[400] flex flex-col gap-3 pointer-events-none" style="width:340px">
     <template x-for="toast in toasts" :key="toast.id">
         <div x-transition:enter="transition ease-out duration-300"

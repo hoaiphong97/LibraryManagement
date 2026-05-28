@@ -25,12 +25,14 @@ builder.Services.AddDbContext<BookDbContext>(options =>
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ISeriesRepository, SeriesRepository>();
+builder.Services.AddScoped<IPreOrderRepository, PreOrderRepository>();
 
 // Register Services
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISeriesService, SeriesService>();
 builder.Services.AddScoped<IImportService, ImportService>();
+builder.Services.AddScoped<IPreOrderService, PreOrderService>();
 
 // Enable CORS
 builder.Services.AddCors(options =>
