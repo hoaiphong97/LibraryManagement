@@ -11,7 +11,8 @@ namespace LibraryManagement.Mapping
             // Category mappings
             CreateMap<Category, CategoryDto>()
                 .ForMember(dest => dest.ParentName, opt => opt.MapFrom(src => src.ParentCategory != null ? src.ParentCategory.Name : null))
-                .ForMember(dest => dest.BookCount, opt => opt.MapFrom(src => src.Books.Count))
+                .ForMember(dest => dest.SeriesCount, opt => opt.MapFrom(src =>
+                    src.Books.Select(b => b.SeriesId).Distinct().Count()))
                 .ForMember(dest => dest.SubCategories, opt => opt.Ignore());
 
             CreateMap<CreateCategoryDto, Category>();
@@ -28,7 +29,9 @@ namespace LibraryManagement.Mapping
                 .ForMember(d => d.MissingVolumes, opt => opt.MapFrom(s => GetMissingVolumes(s)))
                 .ForMember(d => d.CurrentVolumes, opt => opt.MapFrom(s =>
                     s.Books.Select(b => b.VolumeNumber).Distinct().Count()))
-                .ForMember(d => d.Volumes, opt => opt.MapFrom(s => BuildVolumeInfos(s)));
+                .ForMember(d => d.Volumes, opt => opt.MapFrom(s => BuildVolumeInfos(s)))
+                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s =>
+                    s.Category != null ? s.Category.Name : null));
 
             CreateMap<CreateSeriesDto, Series>();
             CreateMap<UpdateSeriesDto, Series>();

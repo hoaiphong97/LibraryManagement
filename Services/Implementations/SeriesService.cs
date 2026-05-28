@@ -1,8 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using LibraryManagement.DTOs;
 using LibraryManagement.Exceptions;
 using LibraryManagement.Models;
-using LibraryManagement.Repositories.Implementations;
 using LibraryManagement.Repositories.Interfaces;
 using LibraryManagement.Services.Interfaces;
 
@@ -11,9 +10,8 @@ namespace LibraryManagement.Services.Implementations
     public class SeriesService : ISeriesService
     {
         private readonly ISeriesRepository _seriesRepository;
-        private readonly IMapper _mapper;
-
         private readonly IBookRepository _bookRepository;
+        private readonly IMapper _mapper;
 
         public SeriesService(ISeriesRepository seriesRepository, IBookRepository bookRepository, IMapper mapper)
         {
@@ -40,23 +38,23 @@ namespace LibraryManagement.Services.Implementations
 
         public async Task<SeriesDto> CreateSeriesAsync(CreateSeriesDto dto)
         {
-            // Validate
             if (dto.TotalVolumes < 1)
                 throw new BadRequestException("Số tập phải >= 1");
 
             if (dto.OwnedVolumeNumbers.Any(v => v < 1 || v > dto.TotalVolumes))
                 throw new BadRequestException($"Số tập đã có phải từ 1 đến {dto.TotalVolumes}");
 
-            // Tạo Series
             var series = _mapper.Map<Series>(dto);
             var createdSeries = await _seriesRepository.AddAsync(series);
 
-            // ✅ Tự động tạo Book cho mỗi tập đã đánh dấu là "có"
-            foreach (var volumeNumber in dto.OwnedVolumeNumbers.Distinct())
+            // Tạo Book record cho mỗi tập đã đánh dấu là có
+            foreach (var volumeNumber in dto.OwnedVolumeNumbers.Distinct().OrderBy(v => v))
             {
                 var book = new Book
                 {
-                    Title = $"{dto.Name} - Tập {volumeNumber}",
+                    Title = dto.TotalVolumes == 1
+                        ? dto.Name
+                        : $"{dto.Name} - Tập {volumeNumber}",
                     Author = dto.Author,
                     CategoryId = dto.CategoryId,
                     SeriesId = createdSeries.Id,
@@ -66,13 +64,12 @@ namespace LibraryManagement.Services.Implementations
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                _bookRepository.AddAsync(book); // hoặc dùng AddAsync nếu cần
+                await _bookRepository.AddAsync(book);
             }
 
             return await GetSeriesByIdAsync(createdSeries.Id);
         }
 
-        // ✅ MỚI: Toggle 1 tập (đánh dấu có/không có)
         public async Task ToggleVolumeAsync(int seriesId, ToggleVolumeDto dto)
         {
             var series = await _seriesRepository.GetSeriesWithBooksAsync(seriesId)
@@ -81,24 +78,24 @@ namespace LibraryManagement.Services.Implementations
             if (dto.VolumeNumber < 1 || dto.VolumeNumber > series.TotalVolumes)
                 throw new BadRequestException($"Tập phải từ 1 đến {series.TotalVolumes}");
 
-            // Tìm book existing với volume + edition này
             var existingBook = series.Books
                 .FirstOrDefault(b => b.VolumeNumber == dto.VolumeNumber && b.Edition == dto.Edition);
 
             if (existingBook != null)
             {
-                // Đã có → xóa (đánh dấu không có)
                 await _bookRepository.DeleteAsync(existingBook);
             }
             else
             {
-                // Chưa có → tạo mới (đánh dấu là đã có)
                 var firstBook = series.Books.FirstOrDefault();
+                var categoryId = series.CategoryId ?? firstBook?.CategoryId ?? 1;
                 var book = new Book
                 {
-                    Title = $"{series.Name} - Tập {dto.VolumeNumber}",
+                    Title = series.TotalVolumes == 1
+                        ? series.Name
+                        : $"{series.Name} - Tập {dto.VolumeNumber}",
                     Author = series.Author,
-                    CategoryId = firstBook?.CategoryId ?? 1,  // Lấy category từ book khác trong bộ
+                    CategoryId = categoryId,
                     SeriesId = seriesId,
                     VolumeNumber = dto.VolumeNumber,
                     Edition = dto.Edition,
@@ -128,9 +125,7 @@ namespace LibraryManagement.Services.Implementations
             if (series == null)
                 throw new NotFoundException($"Không tìm thấy bộ sách với ID {id}");
 
-            if (await _seriesRepository.HasBooksAsync(id))
-                throw new BadRequestException("Không thể xóa bộ sách đang có sách");
-
+            // Cascade delete tự động xóa Books liên quan (configured in DB)
             await _seriesRepository.DeleteAsync(series);
         }
     }

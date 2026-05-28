@@ -1,4 +1,4 @@
-﻿using LibraryManagement.Data;
+using LibraryManagement.Data;
 using LibraryManagement.DTOs;
 using LibraryManagement.Models;
 using LibraryManagement.Services.Interfaces;
@@ -18,8 +18,7 @@ namespace LibraryManagement.Services.Implementations
 
         public async Task<ImportResultDto> ImportBooksFromExcelAsync(Stream fileStream)
         {
-            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
+            ExcelPackage.License.SetNonCommercialPersonal("LibraryManagement");
             var result = new ImportResultDto();
 
             using var package = new ExcelPackage(fileStream);
@@ -32,16 +31,15 @@ namespace LibraryManagement.Services.Implementations
                 return result;
             }
 
-            // Đọc header row để map cột
-            var headers = new Dictionary<string, int>();
-            for (int col = 1; col <= worksheet.Dimension.Columns; col++)
+            // Đọc header (không phân biệt hoa thường)
+            var headers = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int col = 1; col <= worksheet.Dimension!.Columns; col++)
             {
                 var header = worksheet.Cells[1, col].Text.Trim();
                 if (!string.IsNullOrEmpty(header))
                     headers[header] = col;
             }
 
-            // Validate headers
             if (!headers.ContainsKey("Tên sách"))
             {
                 result.Errors.Add("File Excel thiếu cột 'Tên sách'");
@@ -54,63 +52,79 @@ namespace LibraryManagement.Services.Implementations
             {
                 try
                 {
-                    var bookName = GetCell(worksheet, row, headers, "Tên sách");
-                    if (string.IsNullOrWhiteSpace(bookName))
+                    var seriesName = GetCell(worksheet, row, headers, "Tên sách");
+                    if (string.IsNullOrWhiteSpace(seriesName))
                     {
                         result.SkippedCount++;
                         continue;
                     }
 
-                    // Lấy các giá trị từ Excel
-                    var author = GetCell(worksheet, row, headers, "Tác giả");
+                    // Bỏ qua nếu bộ sách đã tồn tại (theo tên)
+                    var existing = await _context.Series
+                        .FirstOrDefaultAsync(s => s.Name == seriesName);
+                    if (existing != null)
+                    {
+                        result.SkippedCount++;
+                        result.SkippedBooks.Add($"{seriesName} (đã tồn tại)");
+                        continue;
+                    }
+
+                    var author = NullIfEmpty(GetCell(worksheet, row, headers, "Tác giả"));
                     var categoryName = GetCell(worksheet, row, headers, "Thể loại");
-                    var seriesName = GetCell(worksheet, row, headers, "Bộ sách");
-                    var volumeStr = GetCell(worksheet, row, headers, "Tập số");
+                    var publisher = NullIfEmpty(GetCell(worksheet, row, headers, "NXB"))
+                                 ?? NullIfEmpty(GetCell(worksheet, row, headers, "Nhà xuất bản"));
+                    var totalVolumesStr = GetCell(worksheet, row, headers, "Tổng số tập");
+                    var ownedVolumesStr = GetCell(worksheet, row, headers, "Tập đã có");
                     var statusStr = GetCell(worksheet, row, headers, "Trạng thái đọc");
-                    var notes = GetCell(worksheet, row, headers, "Ghi chú");
+                    var notes = NullIfEmpty(GetCell(worksheet, row, headers, "Ghi chú"));
 
-                    // Lấy hoặc tạo Category
+                    // Tổng số tập (mặc định 1 cho sách lẻ)
+                    int totalVolumes = 1;
+                    if (int.TryParse(totalVolumesStr, out var tv) && tv >= 1)
+                        totalVolumes = tv;
+
+                    // Các tập đã có (để trống = tất cả)
+                    var ownedVolumes = ParseOwnedVolumes(ownedVolumesStr, totalVolumes);
+
                     var category = await GetOrCreateCategoryAsync(categoryName);
-
-                    // Lấy hoặc tạo Series
-                    Series? series = null;
-                    if (!string.IsNullOrWhiteSpace(seriesName))
-                        series = await GetOrCreateSeriesAsync(seriesName, author);
-
-                    // Parse volume number
-                    int? volumeNumber = null;
-                    if (int.TryParse(volumeStr, out var vol))
-                        volumeNumber = vol;
-
-                    // Parse reading status
                     var readingStatus = ParseReadingStatus(statusStr);
 
-                    // Kiểm tra sách đã tồn tại chưa
-                    var existingBook = await _context.Books
-                        .FirstOrDefaultAsync(b => b.Title == bookName && b.CategoryId == category.Id);
-
-                    if (existingBook != null)
+                    // Tạo Series
+                    var series = new Series
                     {
-                        result.SkippedCount++;
-                        result.SkippedBooks.Add($"{bookName} (đã tồn tại)");
-                        continue;
-                    }
-
-                    // Tạo sách mới
-                    var book = new Book
-                    {
-                        Title = bookName,
+                        Name = seriesName,
                         Author = author,
-                        CategoryId = category.Id,
-                        SeriesId = series.Id,
-                        VolumeNumber = 0,
-                        ReadingStatus = readingStatus,
+                        Publisher = publisher,
+                        TotalVolumes = totalVolumes,
                         Notes = notes,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CategoryId = category.Id,
+                        IsOngoing = false
                     };
+                    _context.Series.Add(series);
+                    await _context.SaveChangesAsync();
 
-                    _context.Books.Add(book);
+                    // Tạo Book record cho mỗi tập đã có
+                    foreach (var vol in ownedVolumes)
+                    {
+                        _context.Books.Add(new Book
+                        {
+                            Title = totalVolumes == 1
+                                ? seriesName
+                                : $"{seriesName} - Tập {vol}",
+                            Author = author,
+                            Publisher = publisher,
+                            CategoryId = category.Id,
+                            SeriesId = series.Id,
+                            VolumeNumber = vol,
+                            Edition = BookEdition.Standard,
+                            ReadingStatus = readingStatus,
+                            Notes = notes,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        });
+                        result.TotalBooksCreated++;
+                    }
+                    await _context.SaveChangesAsync();
                     result.SuccessCount++;
                 }
                 catch (Exception ex)
@@ -119,7 +133,6 @@ namespace LibraryManagement.Services.Implementations
                 }
             }
 
-            await _context.SaveChangesAsync();
             return result;
         }
 
@@ -132,32 +145,48 @@ namespace LibraryManagement.Services.Implementations
             return ws.Cells[row, col].Text.Trim();
         }
 
+        private static string? NullIfEmpty(string? s) =>
+            string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+        // Phân tích danh sách tập: "1-5,7,9" hoặc để trống = tất cả
+        private static List<int> ParseOwnedVolumes(string? input, int totalVolumes)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return Enumerable.Range(1, totalVolumes).ToList();
+
+            var result = new HashSet<int>();
+            foreach (var part in input.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (part.Contains('-'))
+                {
+                    var sides = part.Split('-');
+                    if (sides.Length == 2 &&
+                        int.TryParse(sides[0].Trim(), out var start) &&
+                        int.TryParse(sides[1].Trim(), out var end))
+                    {
+                        for (int i = start; i <= end && i <= totalVolumes; i++)
+                            if (i >= 1) result.Add(i);
+                    }
+                }
+                else if (int.TryParse(part, out var n) && n >= 1 && n <= totalVolumes)
+                {
+                    result.Add(n);
+                }
+            }
+            return result.OrderBy(v => v).ToList();
+        }
+
         private async Task<Category> GetOrCreateCategoryAsync(string? name)
         {
             var safeName = string.IsNullOrWhiteSpace(name) ? "Chưa phân loại" : name.Trim();
-
             var category = await _context.Categories
                 .FirstOrDefaultAsync(c => c.Name == safeName);
-
             if (category != null) return category;
 
             category = new Category { Name = safeName };
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
             return category;
-        }
-
-        private async Task<Series> GetOrCreateSeriesAsync(string name, string? author)
-        {
-            var series = await _context.Series
-                .FirstOrDefaultAsync(s => s.Name == name);
-
-            if (series != null) return series;
-
-            series = new Series { Name = name, Author = author };
-            _context.Series.Add(series);
-            await _context.SaveChangesAsync();
-            return series;
         }
 
         private static ReadingStatus ParseReadingStatus(string? status) =>

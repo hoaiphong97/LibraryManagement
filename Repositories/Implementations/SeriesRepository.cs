@@ -15,6 +15,7 @@ namespace LibraryManagement.Repositories.Implementations
         {
             return await _dbSet
                 .Include(s => s.Books)
+                .Include(s => s.Category)
                 .ToListAsync();
         }
 
@@ -22,6 +23,7 @@ namespace LibraryManagement.Repositories.Implementations
         {
             return await _dbSet
                 .Include(s => s.Books)
+                .Include(s => s.Category)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 
@@ -29,6 +31,7 @@ namespace LibraryManagement.Repositories.Implementations
         {
             var query = _dbSet
                 .Include(s => s.Books)
+                .Include(s => s.Category)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))

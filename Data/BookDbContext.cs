@@ -26,6 +26,13 @@ namespace LibraryManagement.Data
                 .HasForeignKey(c => c.ParentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Series → Category (optional)
+            modelBuilder.Entity<Series>()
+                .HasOne(s => s.Category)
+                .WithMany()
+                .HasForeignKey(s => s.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Seed data cho Categories (phân cấp)
             modelBuilder.Entity<Category>().HasData(
                 // Cấp 1

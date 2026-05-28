@@ -12,10 +12,12 @@ namespace LibraryManagement.DTOs
         public string? Author { get; set; }
         public string? Publisher { get; set; }
         public bool IsOngoing { get; set; }
+        public int? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public int CurrentVolumes { get; set; }
         public List<int> OwnedVolumes { get; set; } = new();
         public List<int> MissingVolumes { get; set; } = new();
-        public List<VolumeInfoDto> Volumes { get; set; } = new();  // ✅ Chi tiết từng tập
+        public List<VolumeInfoDto> Volumes { get; set; } = new();
     }
 
     public class VolumeInfoDto
@@ -56,6 +58,7 @@ namespace LibraryManagement.DTOs
         public string? Author { get; set; }
         public string? Publisher { get; set; }
         public bool IsOngoing { get; set; }
+        public int? CategoryId { get; set; }
     }
 
     // ✅ MỚI: DTO để toggle 1 tập (đã có / chưa có)

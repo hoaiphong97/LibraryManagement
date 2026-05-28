@@ -7,7 +7,7 @@
         public int? ParentId { get; set; }
         public string? ParentName { get; set; }
         public string? Description { get; set; }
-        public int BookCount { get; set; }
+        public int SeriesCount { get; set; }
         public List<CategoryDto> SubCategories { get; set; } = new();
     }
 
