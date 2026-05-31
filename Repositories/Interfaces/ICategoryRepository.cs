@@ -9,6 +9,7 @@ namespace LibraryManagement.Repositories.Interfaces
         Task<IEnumerable<Category>> SearchCategoriesAsync(string? search);
         Task<IEnumerable<Category>> GetRootCategoriesAsync();
         Task<bool> HasBooksAsync(int categoryId);
+        Task<bool> HasSeriesAsync(int categoryId);
         Task<bool> HasSubCategoriesAsync(int categoryId);
     }
 }

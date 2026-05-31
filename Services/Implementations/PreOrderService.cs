@@ -79,9 +79,6 @@ namespace LibraryManagement.Services.Implementations
             var preOrder = await _preOrderRepository.GetByIdAsync(id)
                 ?? throw new NotFoundException($"Không tìm thấy pre-order với ID {id}");
 
-            if (preOrder.Status == PreOrderStatus.Arrived)
-                throw new BadRequestException("Không thể xóa pre-order đã lên kệ");
-
             await _preOrderRepository.DeleteAsync(preOrder);
         }
 

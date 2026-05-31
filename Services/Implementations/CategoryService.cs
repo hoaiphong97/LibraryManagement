@@ -80,8 +80,8 @@ namespace LibraryManagement.Services.Implementations
             if (category == null)
                 throw new NotFoundException($"Không tìm thấy thể loại với ID {id}");
 
-            if (await _categoryRepository.HasBooksAsync(id))
-                throw new BadRequestException("Không thể xóa thể loại đang có sách");
+            if (await _categoryRepository.HasSeriesAsync(id))
+                throw new BadRequestException("Không thể xóa thể loại đang có bộ sách. Hãy chuyển các bộ sách sang thể loại khác trước.");
 
             if (await _categoryRepository.HasSubCategoriesAsync(id))
                 throw new BadRequestException("Không thể xóa thể loại đang có thể loại con");

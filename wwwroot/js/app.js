@@ -280,7 +280,7 @@ function app() {
         if (!confirm('Xoá bộ sách này và tất cả các tập đã có?')) return;
         try {
             await apiFetch(`${API}/series/${id}`, { method: 'DELETE' });
-            await this.loadSeries();
+            await Promise.all([this.loadSeries(), this.loadCategories()]);
             this.loadDashboard();
             this.showToast('Đã xoá bộ sách.');
         } catch (e) {

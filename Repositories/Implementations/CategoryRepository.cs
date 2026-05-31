@@ -61,9 +61,15 @@ namespace LibraryManagement.Repositories.Implementations
             return await _context.Books.AnyAsync(b => b.CategoryId == categoryId);
         }
 
+        public async Task<bool> HasSeriesAsync(int categoryId)
+        {
+            return await _context.Series.AnyAsync(s => s.CategoryId == categoryId);
+        }
+
         public async Task<bool> HasSubCategoriesAsync(int categoryId)
         {
-            return await _dbSet.AnyAsync(c => c.ParentId == categoryId);
+            // Exclude self-reference (seed data has ParentId == Id)
+            return await _dbSet.AnyAsync(c => c.ParentId == categoryId && c.Id != categoryId);
         }
     }
 }
