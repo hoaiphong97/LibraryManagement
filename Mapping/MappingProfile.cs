@@ -31,10 +31,19 @@ namespace LibraryManagement.Mapping
                     s.Books.Select(b => b.VolumeNumber).Distinct().Count()))
                 .ForMember(d => d.Volumes, opt => opt.MapFrom(s => BuildVolumeInfos(s)))
                 .ForMember(d => d.CategoryName, opt => opt.MapFrom(s =>
-                    s.Category != null ? s.Category.Name : null));
+                    s.Category != null ? s.Category.Name : null))
+                .ForMember(d => d.ReadingStatusText, opt => opt.MapFrom(s =>
+                    GetReadingStatusText(s.ReadingStatus)));
 
             CreateMap<CreateSeriesDto, Series>();
             CreateMap<UpdateSeriesDto, Series>();
+
+            // WishList mappings
+            CreateMap<WishList, WishListDto>()
+                .ForMember(d => d.CategoryName, opt => opt.MapFrom(s =>
+                    s.Category != null ? s.Category.Name : null));
+            CreateMap<CreateWishListDto, WishList>();
+            CreateMap<UpdateWishListDto, WishList>();
 
             // Book mappings
             CreateMap<Book, BookDto>()

@@ -15,6 +15,8 @@ namespace LibraryManagement.DTOs
         public int? CategoryId { get; set; }
         public string? CategoryName { get; set; }
         public int CurrentVolumes { get; set; }
+        public ReadingStatus ReadingStatus { get; set; }
+        public string ReadingStatusText { get; set; } = string.Empty;
         public List<int> OwnedVolumes { get; set; } = new();
         public List<int> MissingVolumes { get; set; } = new();
         public List<VolumeInfoDto> Volumes { get; set; } = new();
@@ -45,8 +47,9 @@ namespace LibraryManagement.DTOs
         public string? Author { get; set; }
         public string? Publisher { get; set; }
         public bool IsOngoing { get; set; } = false;
-        public int CategoryId { get; set; }  // ✅ Thể loại của bộ
-        public List<int> OwnedVolumeNumbers { get; set; } = new();  // ✅ Tập đã có
+        public int CategoryId { get; set; }
+        public ReadingStatus ReadingStatus { get; set; } = ReadingStatus.NotStarted;
+        public List<int> OwnedVolumeNumbers { get; set; } = new();
     }
 
     public class UpdateSeriesDto
@@ -59,6 +62,7 @@ namespace LibraryManagement.DTOs
         public string? Publisher { get; set; }
         public bool IsOngoing { get; set; }
         public int? CategoryId { get; set; }
+        public ReadingStatus ReadingStatus { get; set; } = ReadingStatus.NotStarted;
     }
 
     // ✅ MỚI: DTO để toggle 1 tập (đã có / chưa có)

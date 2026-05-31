@@ -1,4 +1,4 @@
-﻿namespace LibraryManagement.Models
+namespace LibraryManagement.Models
 {
     public class Series
     {
@@ -11,6 +11,7 @@
         public string? Publisher { get; set; }
         public bool IsOngoing { get; set; } = false;
         public int? CategoryId { get; set; }
+        public ReadingStatus ReadingStatus { get; set; } = ReadingStatus.NotStarted;
 
         public Category? Category { get; set; }
         public ICollection<Book> Books { get; set; } = new List<Book>();

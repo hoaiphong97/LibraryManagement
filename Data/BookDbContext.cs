@@ -15,6 +15,7 @@ namespace LibraryManagement.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Series> Series { get; set; }
         public DbSet<PreOrder> PreOrders { get; set; }
+        public DbSet<WishList> WishLists { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +47,13 @@ namespace LibraryManagement.Data
                 .HasOne(p => p.Book)
                 .WithMany()
                 .HasForeignKey(p => p.BookId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // WishList → Category (optional)
+            modelBuilder.Entity<WishList>()
+                .HasOne(w => w.Category)
+                .WithMany()
+                .HasForeignKey(w => w.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Seed data cho Categories (phân cấp)

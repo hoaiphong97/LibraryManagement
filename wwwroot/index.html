@@ -190,6 +190,14 @@
             box-shadow: inset 0 -2px 6px rgba(180,120,60,.15), 0 4px 8px rgba(180,120,60,.12);
         }
 
+        /* ── Category card clickable ───────────────────────────────── */
+        .cat-card {
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s, outline .15s;
+        }
+        .cat-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(249,168,212,.3); }
+        .cat-card.selected { outline: 3px solid #F9A8D4; }
+
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -201,7 +209,7 @@
 <div class="flex h-screen overflow-hidden relative z-10">
 
     <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
-    <aside class="sidebar-glow w-64 bg-white/90 backdrop-blur shadow-lg flex flex-col p-6 gap-4 flex-shrink-0 relative">
+    <aside class="sidebar-glow w-64 bg-white/90 backdrop-blur shadow-lg flex flex-col p-6 gap-4 flex-shrink-0 relative overflow-y-auto">
         <div class="text-center mb-4">
             <div class="text-4xl mb-2"><span class="logo-bob">📚</span></div>
             <h1 class="text-xl font-extrabold text-pink-400">Tủ Sách</h1>
@@ -222,6 +230,14 @@
                     :class="currentPage==='categories' ? 'nav-active' : 'hover:bg-pink-50'"
                     class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
                 🏷️ <span>Thể loại</span>
+            </button>
+            <button @click="currentPage='wishlist'"
+                    :class="currentPage==='wishlist' ? 'nav-active' : 'hover:bg-yellow-50'"
+                    class="text-left px-4 py-3 rounded-xl font-semibold flex items-center gap-3 transition-all">
+                🌟 <span>Wish List</span>
+                <span x-show="wishList.length > 0"
+                      class="ml-auto bg-yellow-400 text-white text-xs font-bold px-2 py-0.5 rounded-full leading-none"
+                      x-text="wishList.length"></span>
             </button>
             <button @click="currentPage='import'"
                     :class="currentPage==='import' ? 'nav-active' : 'hover:bg-pink-50'"
@@ -310,18 +326,40 @@
 
         <!-- SERIES PAGE ────────────────────────────────────────────── -->
         <div x-show="currentPage==='series'" class="fade-in">
-            <div class="flex justify-between items-center mb-8">
+            <div class="flex justify-between items-center mb-6">
                 <h2 class="text-3xl font-extrabold text-pink-400">📦 Bộ sách</h2>
                 <button @click="openSeriesModal()"
                         class="bg-gradient-to-r from-orange-400 to-pink-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
                     ➕ Thêm bộ sách
                 </button>
             </div>
-            <div class="mb-6">
+
+            <!-- Filters row -->
+            <div class="flex flex-wrap gap-3 mb-6">
                 <input x-model="seriesSearch"
-                       placeholder="🔍 Tìm tên bộ sách, tác giả, thể loại..."
-                       class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400 bg-white/80" />
+                       placeholder="🔍 Tìm tên, tác giả, thể loại..."
+                       class="flex-1 min-w-[200px] border-2 border-orange-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-400 bg-white/80" />
+                <select x-model="seriesStatusFilter"
+                        class="border-2 border-pink-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-pink-400 bg-white/80 font-semibold text-sm">
+                    <option value="">📖 Tất cả trạng thái</option>
+                    <option value="0">📖 Chưa đọc</option>
+                    <option value="1">📗 Đang đọc</option>
+                    <option value="2">✅ Đã đọc</option>
+                </select>
+                <select x-model="seriesCategoryFilter"
+                        class="border-2 border-blue-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-400 bg-white/80 font-semibold text-sm">
+                    <option value="">🏷️ Tất cả thể loại</option>
+                    <template x-for="cat in categories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
+                </select>
             </div>
+
+            <!-- Result count -->
+            <p class="text-sm text-gray-400 mb-4" x-show="seriesList.length > 0">
+                Hiển thị <span class="font-bold text-orange-400" x-text="filteredSeriesList.length"></span>
+                / <span x-text="seriesList.length"></span> bộ sách
+            </p>
 
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                 <template x-for="s in filteredSeriesList" :key="s.id">
@@ -334,10 +372,17 @@
                             </div>
                         </div>
                         <p class="text-sm text-gray-400 mb-2" x-text="s.author || 'Chưa có tác giả'"></p>
-                        <template x-if="s.categoryName">
-                            <span class="inline-block text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full font-semibold mb-3"
-                                  x-text="s.categoryName"></span>
-                        </template>
+
+                        <!-- Badges row -->
+                        <div class="flex flex-wrap gap-1.5 mb-3">
+                            <template x-if="s.categoryName">
+                                <span class="text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full font-semibold"
+                                      x-text="s.categoryName"></span>
+                            </template>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                  :class="readingStatusClass(s.readingStatus)"
+                                  x-text="readingStatusEmoji(s.readingStatus) + ' ' + readingStatusLabel(s.readingStatus)"></span>
+                        </div>
 
                         <!-- Mini book-spine shelf preview -->
                         <div class="shelf flex flex-wrap gap-1 items-end px-3 pt-3 pb-1 mb-4" x-show="s.totalVolumes">
@@ -398,37 +443,41 @@
             </div>
             <div x-show="seriesList.length > 0 && filteredSeriesList.length === 0" class="text-center py-20">
                 <div class="text-6xl mb-4">🔍</div>
-                <p class="text-gray-400 font-semibold">Không tìm thấy bộ sách nào khớp với "<span x-text="seriesSearch"></span>"</p>
+                <p class="text-gray-400 font-semibold">Không tìm thấy bộ sách nào khớp với bộ lọc hiện tại</p>
             </div>
         </div>
 
         <!-- CATEGORIES PAGE ────────────────────────────────────────── -->
         <div x-show="currentPage==='categories'" class="fade-in">
-            <div class="flex justify-between items-center mb-8">
+            <div class="flex justify-between items-center mb-6">
                 <h2 class="text-3xl font-extrabold text-pink-400">🏷️ Thể loại</h2>
                 <button @click="openCategoryModal()"
                         class="bg-gradient-to-r from-blue-400 to-purple-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
                     ➕ Thêm thể loại
                 </button>
             </div>
-            <div class="mb-4">
+            <div class="mb-5">
                 <input x-model="categorySearch"
                        placeholder="🔍 Tìm thể loại..."
                        class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 bg-white/80" />
             </div>
+
+            <!-- Category grid -->
             <div x-show="categories.length > 0 && filteredCategories.length === 0" class="text-center py-10">
                 <div class="text-5xl mb-3">🔍</div>
                 <p class="text-gray-400 font-semibold">Không tìm thấy thể loại nào</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
                 <template x-for="cat in filteredCategories" :key="cat.id">
-                    <div class="rounded-2xl p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 overflow-hidden"
-                         :style="getCategoryStyle(cat.name)">
+                    <div class="cat-card rounded-2xl p-6 shadow-sm overflow-hidden"
+                         :class="selectedCategory?.id === cat.id ? 'selected' : ''"
+                         :style="getCategoryStyle(cat.name)"
+                         @click="selectCategory(cat)">
                         <div class="flex justify-between items-start mb-3">
                             <h3 class="font-extrabold text-gray-700 text-lg" x-text="cat.name"></h3>
                             <div class="flex gap-2">
-                                <button @click="openCategoryModal(cat)" class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
-                                <button @click="deleteCategory(cat.id)" class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
+                                <button @click.stop="openCategoryModal(cat)" class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                <button @click.stop="deleteCategory(cat.id)" class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
                             </div>
                         </div>
                         <p class="text-sm text-gray-400 mb-4" x-text="cat.description || 'Chưa có mô tả'"></p>
@@ -436,6 +485,146 @@
                             <span class="text-2xl font-extrabold text-blue-400" x-text="cat.seriesCount"></span>
                             <span class="text-xs text-gray-400">bộ sách</span>
                         </div>
+                        <p class="text-xs text-pink-400 font-semibold mt-2"
+                           x-show="selectedCategory?.id === cat.id">▼ Đang xem danh sách</p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Series list for selected category -->
+            <div x-show="selectedCategory" class="fade-in bg-white/90 backdrop-blur rounded-2xl p-6 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-extrabold text-gray-700">
+                        📦 Bộ sách thuộc: <span class="text-pink-400" x-text="selectedCategory?.name"></span>
+                        <span class="text-sm font-semibold text-gray-400 ml-2">
+                            (<span x-text="selectedCategorySeries.length"></span> bộ)
+                        </span>
+                    </h3>
+                    <button @click="selectedCategory = null" class="text-gray-400 hover:text-gray-600 text-xl hover:scale-110 transition-transform">✕</button>
+                </div>
+
+                <div x-show="selectedCategorySeries.length === 0" class="text-center py-10 text-gray-400">
+                    <div class="text-4xl mb-2">📦</div>
+                    <p>Thể loại này chưa có bộ sách nào</p>
+                </div>
+
+                <div x-show="selectedCategorySeries.length > 0" class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left border-b-2 border-pink-100">
+                                <th class="pb-3 font-bold text-gray-600 pr-4">Tên bộ sách</th>
+                                <th class="pb-3 font-bold text-gray-600 pr-4">Tác giả</th>
+                                <th class="pb-3 font-bold text-gray-600 pr-4">Tiến độ</th>
+                                <th class="pb-3 font-bold text-gray-600 pr-4">Trạng thái đọc</th>
+                                <th class="pb-3 font-bold text-gray-600">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="s in selectedCategorySeries" :key="s.id">
+                                <tr class="border-b border-gray-50 hover:bg-pink-50/40 transition-colors">
+                                    <td class="py-3 pr-4">
+                                        <p class="font-bold text-gray-700" x-text="s.name"></p>
+                                        <p class="text-xs text-gray-400" x-show="s.isOngoing">📰 Đang xuất bản</p>
+                                    </td>
+                                    <td class="py-3 pr-4 text-gray-500" x-text="s.author || '—'"></td>
+                                    <td class="py-3 pr-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-24 bg-orange-100 rounded-full h-1.5">
+                                                <div class="bg-gradient-to-r from-orange-400 to-pink-400 h-1.5 rounded-full"
+                                                     :style="`width:${Math.min(100,(s.currentVolumes/(s.totalVolumes||1))*100)}%`"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 whitespace-nowrap"
+                                                  x-text="`${s.currentVolumes}/${s.totalVolumes || '?'}`"></span>
+                                        </div>
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                              :class="readingStatusClass(s.readingStatus)"
+                                              x-text="readingStatusEmoji(s.readingStatus) + ' ' + readingStatusLabel(s.readingStatus)"></span>
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="flex gap-1">
+                                            <button @click="openVolumeMap(s)" class="text-orange-400 hover:text-orange-600 p-1 text-xs font-bold hover:scale-110 transition-transform" title="Xem kệ">📚</button>
+                                            <button @click="openSeriesModal(s)" class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- WISH LIST PAGE ─────────────────────────────────────────── -->
+        <div x-show="currentPage==='wishlist'" class="fade-in">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-yellow-500">🌟 Wish List</h2>
+                    <p class="text-sm text-yellow-400 mt-1">Những cuốn sách mong muốn mua 💛</p>
+                </div>
+                <button @click="openWishListModal()"
+                        class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
+                    ➕ Thêm vào wish list
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-2 gap-4 mb-6 mt-6">
+                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-2xl font-extrabold text-yellow-500" x-text="wishList.length"></p>
+                    <p class="text-xs text-gray-500 mt-1">🌟 Sách đang muốn mua</p>
+                </div>
+                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
+                    <p class="text-2xl font-extrabold text-orange-400"
+                       x-text="new Set(wishList.map(w => w.categoryId).filter(Boolean)).size || 0"></p>
+                    <p class="text-xs text-gray-500 mt-1">🏷️ Thể loại</p>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div x-show="wishList.length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">🌟</div>
+                <p class="text-gray-400 font-semibold">Wish list đang trống</p>
+                <p class="text-gray-300 text-sm mt-1">Thêm những cuốn sách bạn muốn mua vào đây!</p>
+            </div>
+
+            <!-- Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <template x-for="item in wishList" :key="item.id">
+                    <div class="bg-white/90 backdrop-blur rounded-2xl p-5 shadow-sm transition-all hover:shadow-md border-l-4 border-yellow-300">
+                        <div class="flex justify-between items-start mb-3">
+                            <span class="text-xs font-bold px-2 py-1 rounded-full bg-yellow-100 text-yellow-600">🌟 Muốn mua</span>
+                            <div class="flex gap-1">
+                                <button @click="openWishListModal(item)"
+                                        class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
+                                <button @click="deleteWishItem(item.id)"
+                                        class="text-red-400 hover:text-red-600 p-1 hover:scale-110 transition-transform">🗑️</button>
+                            </div>
+                        </div>
+
+                        <h3 class="font-extrabold text-gray-700 text-base leading-snug mb-1" x-text="item.title"></h3>
+
+                        <p class="text-xs text-gray-400 mb-2">
+                            <span x-text="item.author || 'Chưa có tác giả'"></span>
+                            <template x-if="item.publisher">
+                                <span> · <span class="text-orange-500 font-semibold" x-text="item.publisher"></span></span>
+                            </template>
+                        </p>
+
+                        <template x-if="item.categoryName">
+                            <span class="inline-block text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full font-semibold mb-2"
+                                  x-text="'🏷️ ' + item.categoryName"></span>
+                        </template>
+
+                        <template x-if="item.notes">
+                            <p class="text-xs text-purple-400 italic mt-2 line-clamp-2">
+                                📝 <span x-text="item.notes"></span>
+                            </p>
+                        </template>
+
+                        <p class="text-xs text-gray-300 mt-3"
+                           x-text="'Thêm: ' + new Date(item.createdAt).toLocaleDateString('vi-VN')"></p>
                     </div>
                 </template>
             </div>
@@ -527,7 +716,7 @@
             <div class="flex justify-between items-center mb-2">
                 <div>
                     <h2 class="text-3xl font-extrabold text-purple-400">🛒 Pre-order</h2>
-                    <p class="text-sm text-purple-300 mt-1">Những cuốn sách đang chờ về tay 💜</p>
+                    <p class="text-sm text-purple-300 mt-1">Tracking các bộ sách đang được pre-order 💜</p>
                 </div>
                 <button @click="openPreOrderModal()"
                         class="bg-gradient-to-r from-purple-400 to-pink-400 text-white px-6 py-3 rounded-xl font-bold hover:opacity-90 transition-opacity shadow-md">
@@ -536,14 +725,10 @@
             </div>
 
             <!-- Summary stats -->
-            <div class="grid grid-cols-3 gap-4 mb-6 mt-6">
+            <div class="grid grid-cols-2 gap-4 mb-6 mt-6">
                 <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
                     <p class="text-2xl font-extrabold text-purple-400" x-text="preOrders.filter(p => p.status === 0).length"></p>
                     <p class="text-xs text-gray-500 mt-1">🕐 Đang chờ</p>
-                </div>
-                <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
-                    <p class="text-2xl font-extrabold text-green-400" x-text="preOrders.filter(p => p.status === 1).length"></p>
-                    <p class="text-xs text-gray-500 mt-1">✅ Đã lên kệ</p>
                 </div>
                 <div class="bg-white/90 rounded-2xl p-4 text-center shadow-sm">
                     <p class="text-2xl font-extrabold text-gray-400" x-text="preOrders.filter(p => p.status === 2).length"></p>
@@ -563,11 +748,6 @@
                         class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
                     🕐 Đang chờ
                 </button>
-                <button @click="preOrderFilter = 1"
-                        :class="preOrderFilter === 1 ? 'bg-green-400 text-white shadow-md' : 'bg-white text-green-600 hover:bg-green-50'"
-                        class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
-                    ✅ Đã lên kệ
-                </button>
                 <button @click="preOrderFilter = 2"
                         :class="preOrderFilter === 2 ? 'bg-gray-400 text-white shadow-md' : 'bg-white text-gray-500 hover:bg-gray-50'"
                         class="px-4 py-2 rounded-xl font-semibold text-sm transition-all">
@@ -579,7 +759,7 @@
             <div x-show="filteredPreOrders.length === 0" class="text-center py-20">
                 <div class="text-6xl mb-4">🛒</div>
                 <p class="text-gray-400 font-semibold">Chưa có pre-order nào</p>
-                <p class="text-gray-300 text-sm mt-1">Thêm những cuốn sách bạn đang mong chờ!</p>
+                <p class="text-gray-300 text-sm mt-1">Thêm những cuốn sách bạn đang pre-order!</p>
             </div>
 
             <!-- Cards -->
@@ -593,15 +773,13 @@
                             <span class="text-xs font-bold px-3 py-1 rounded-full"
                                   :class="{
                                       'bg-purple-100 text-purple-600': po.status === 0,
-                                      'bg-green-100 text-green-600':  po.status === 1,
                                       'bg-gray-100 text-gray-500':    po.status === 2
                                   }">
                                 <span x-show="po.status === 0" class="inline-block animate-pulse">🕐</span>
-                                <span x-show="po.status === 1">✅</span>
                                 <span x-show="po.status === 2">❌</span>
                                 <span x-text="po.statusText"></span>
                             </span>
-                            <div class="flex gap-1" x-show="po.status !== 1">
+                            <div class="flex gap-1">
                                 <button @click="openPreOrderModal(po)"
                                         class="text-blue-400 hover:text-blue-600 p-1 hover:scale-110 transition-transform">✏️</button>
                                 <button @click="deletePreOrder(po.id)"
@@ -646,25 +824,13 @@
                             </p>
                         </template>
 
-                        <!-- Shelved: link to book -->
-                        <template x-if="po.status === 1 && po.bookId">
-                            <p class="text-xs text-green-500 font-semibold mb-2">
-                                📚 Đã vào kệ sách (Book #<span x-text="po.bookId"></span>)
-                            </p>
-                        </template>
-
-                        <!-- Spacer -->
                         <div class="flex-1"></div>
 
-                        <!-- Action buttons — chỉ khi Pending -->
+                        <!-- Cancel button — chỉ khi Pending -->
                         <div x-show="po.status === 0" class="flex gap-2 mt-4 pt-3 border-t border-purple-50">
-                            <button @click="openShelveModal(po)"
-                                    class="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity">
-                                📚 Lên kệ
-                            </button>
                             <button @click="cancelPreOrder(po.id)"
-                                    class="bg-gray-100 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors">
-                                Hủy
+                                    class="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors">
+                                ❌ Hủy pre-order
                             </button>
                         </div>
                     </div>
@@ -718,13 +884,22 @@
                        class="border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
             </div>
 
-            <select x-model="editingSeries.categoryId"
-                    class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400">
-                <option value="">Chọn thể loại</option>
-                <template x-for="cat in categories" :key="cat.id">
-                    <option :value="cat.id" x-text="cat.name"></option>
-                </template>
-            </select>
+            <div class="grid grid-cols-2 gap-4">
+                <select x-model="editingSeries.categoryId"
+                        class="border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400">
+                    <option value="">Chọn thể loại</option>
+                    <template x-for="cat in categories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
+                </select>
+
+                <select x-model.number="editingSeries.readingStatus"
+                        class="border-2 border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-400">
+                    <option value="0">📖 Chưa đọc</option>
+                    <option value="1">📗 Đang đọc</option>
+                    <option value="2">✅ Đã đọc</option>
+                </select>
+            </div>
 
             <div>
                 <label class="block text-sm font-bold text-gray-600 mb-2">Tổng số tập *</label>
@@ -794,10 +969,15 @@
                     <div>
                         <h3 class="text-2xl font-extrabold text-orange-400" x-text="selectedSeries.name"></h3>
                         <p class="text-sm text-gray-400" x-text="selectedSeries.author"></p>
-                        <template x-if="selectedSeries.categoryName">
-                            <span class="inline-block text-xs bg-pink-100 text-pink-600 px-2 py-1 rounded-full font-semibold mt-1"
-                                  x-text="selectedSeries.categoryName"></span>
-                        </template>
+                        <div class="flex flex-wrap gap-1.5 mt-1">
+                            <template x-if="selectedSeries.categoryName">
+                                <span class="inline-block text-xs bg-pink-100 text-pink-600 px-2 py-0.5 rounded-full font-semibold"
+                                      x-text="selectedSeries.categoryName"></span>
+                            </template>
+                            <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                                  :class="readingStatusClass(selectedSeries.readingStatus)"
+                                  x-text="readingStatusEmoji(selectedSeries.readingStatus) + ' ' + readingStatusLabel(selectedSeries.readingStatus)"></span>
+                        </div>
                     </div>
                     <button @click="showVolumeMap=false" class="text-gray-400 hover:text-gray-600 text-2xl hover:scale-110 transition-transform">✕</button>
                 </div>
@@ -879,11 +1059,9 @@
             x-text="editingPreOrder?.id ? '✏️ Sửa pre-order' : '🛒 Thêm pre-order mới'"></h3>
 
         <div class="space-y-4">
-            <!-- Title -->
             <input x-model="editingPreOrder.title" placeholder="Tên sách *"
                    class="w-full border-2 border-purple-200 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-400" />
 
-            <!-- Author + Publisher -->
             <div class="grid grid-cols-2 gap-3">
                 <input x-model="editingPreOrder.author" placeholder="Tác giả"
                        class="border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300" />
@@ -891,7 +1069,6 @@
                        class="border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300" />
             </div>
 
-            <!-- Series link (optional) -->
             <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1">📦 Thuộc bộ sách (tuỳ chọn)</label>
                 <select x-model="editingPreOrder.seriesId"
@@ -903,7 +1080,6 @@
                 </select>
             </div>
 
-            <!-- Volume number -->
             <template x-if="editingPreOrder.seriesId">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1">Số tập</label>
@@ -912,19 +1088,16 @@
                 </div>
             </template>
 
-            <!-- Expected date -->
             <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1">📅 Ngày dự kiến về (tuỳ chọn)</label>
                 <input x-model="editingPreOrder.expectedDate" type="date"
                        class="w-full border-2 border-blue-100 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-300" />
             </div>
 
-            <!-- Notes -->
             <textarea x-model="editingPreOrder.notes" rows="3"
                       placeholder="Ghi chú (VD: Pre-order ở NXB Kim Đồng, tặng kèm bookmark...)"
                       class="w-full border-2 border-purple-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-300"></textarea>
 
-            <!-- Status (chỉ khi edit) -->
             <template x-if="editingPreOrder.id">
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1">Trạng thái</label>
@@ -950,67 +1123,47 @@
     </div>
 </div>
 
-<!-- ── SHELVE MODAL ──────────────────────────────────────────────── -->
-<div x-show="showShelveModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-     @click.self="showShelveModal=false"
+<!-- ── WISH LIST MODAL ───────────────────────────────────────────── -->
+<div x-show="showWishListModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+     @click.self="showWishListModal=false"
      x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
      x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-    <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl" @click.stop
+    <div class="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl" @click.stop
          x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
 
-        <h3 class="text-2xl font-extrabold text-purple-400 mb-1">📚 Lên kệ</h3>
-        <template x-if="shelvingPreOrder">
-            <p class="text-sm text-gray-500 mb-6">
-                Đưa <strong x-text="shelvingPreOrder.title"></strong> vào kệ sách
-            </p>
-        </template>
+        <h3 class="text-2xl font-extrabold text-yellow-500 mb-6"
+            x-text="editingWishItem?.id ? '✏️ Sửa wish list item' : '🌟 Thêm vào wish list'"></h3>
 
         <div class="space-y-4">
-            <!-- Chọn bộ sách -->
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">📦 Bộ sách *</label>
-                <select x-model="shelveDto.seriesId"
-                        class="w-full border-2 border-orange-200 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-400">
-                    <option value="">-- Chọn bộ sách --</option>
-                    <template x-for="s in seriesList" :key="s.id">
-                        <option :value="s.id" x-text="s.name"></option>
-                    </template>
-                </select>
-                <p class="text-xs text-gray-400 mt-1">Nếu pre-order đã được liên kết sẵn, giữ nguyên hoặc đổi lại</p>
+            <input x-model="editingWishItem.title" placeholder="Tên sách *"
+                   class="w-full border-2 border-yellow-200 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400" />
+
+            <div class="grid grid-cols-2 gap-3">
+                <input x-model="editingWishItem.author" placeholder="Tác giả"
+                       class="border-2 border-yellow-100 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-300" />
+                <input x-model="editingWishItem.publisher" placeholder="Nhà xuất bản / Nơi mua"
+                       class="border-2 border-yellow-100 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-300" />
             </div>
 
-            <!-- Số tập -->
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Số tập</label>
-                <input x-model.number="shelveDto.volumeNumber" type="number" min="1"
-                       class="w-full border-2 border-orange-100 rounded-xl px-4 py-3 focus:outline-none focus:border-orange-300" />
-            </div>
+            <select x-model="editingWishItem.categoryId"
+                    class="w-full border-2 border-blue-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400">
+                <option value="">🏷️ Chọn thể loại (tuỳ chọn)</option>
+                <template x-for="cat in categories" :key="cat.id">
+                    <option :value="cat.id" x-text="cat.name"></option>
+                </template>
+            </select>
 
-            <!-- Phiên bản -->
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Phiên bản</label>
-                <select x-model.number="shelveDto.edition"
-                        class="w-full border-2 border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-400">
-                    <option value="0">📗 Bản thường</option>
-                    <option value="1">⭐ Bản đặc biệt</option>
-                    <option value="2">💎 Bản giới hạn</option>
-                    <option value="3">👑 Bản sưu tầm</option>
-                </select>
-            </div>
-
-            <!-- Info box -->
-            <div class="bg-purple-50 rounded-xl p-4 text-xs text-purple-500 leading-relaxed">
-                💡 Sau khi lên kệ, sách sẽ xuất hiện trong <strong>Bộ sách</strong> và pre-order này
-                sẽ chuyển sang trạng thái <strong>Đã lên kệ ✅</strong>
-            </div>
+            <textarea x-model="editingWishItem.notes" rows="3"
+                      placeholder="Ghi chú (VD: Đang chờ tái bản, link mua: ..., giá dự kiến...)"
+                      class="w-full border-2 border-yellow-100 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-300"></textarea>
         </div>
 
         <div class="flex gap-3 mt-6">
-            <button @click="executeShelve()"
-                    class="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
-                📚 Lên kệ ngay!
+            <button @click="saveWishItem()"
+                    class="flex-1 bg-gradient-to-r from-yellow-400 to-orange-400 text-white py-3 rounded-xl font-bold hover:opacity-90 transition-opacity">
+                💾 Lưu
             </button>
-            <button @click="showShelveModal=false"
+            <button @click="showWishListModal=false"
                     class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors">
                 Huỷ
             </button>
